@@ -16,7 +16,7 @@ Organizador de estudos que roda no navegador e pode ser instalado como app no PC
 
 ### Online
 
-Acesse **[usuario.github.io/studyflow](https://usuario.github.io/studyflow/)**, sem instalar nada.
+Acesse **[ogoncas.github.io/studyflow](https://ogoncas.github.io/studyflow/)**, sem instalar nada.
 
 ### Instalar como app
 
@@ -30,7 +30,7 @@ Depois de instalado, abre em janela própria e funciona sem internet.
 O projeto usa módulos ES e service worker, então precisa ser aberto por um servidor local (abrir o `index.html` direto não funciona):
 
 ```bash
-git clone https://github.com/usuario/studyflow.git
+git clone https://github.com/ogoncas/studyflow.git
 cd studyflow
 python3 -m http.server 8000
 ```
