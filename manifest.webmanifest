@@ -1,0 +1,29 @@
+{
+  "id": "studyflow",
+  "name": "StudyFlow",
+  "short_name": "StudyFlow",
+  "description": "Organizador de estudos: horário de aulas, calendário, anotações e média por matéria.",
+  "lang": "pt-BR",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f6fa",
+  "theme_color": "#f5f6fa",
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Horário", "url": "./?view=schedule&source=shortcut" },
+    { "name": "Calendário", "url": "./?view=calendar&source=shortcut" },
+    { "name": "Notas", "url": "./?view=notes&source=shortcut" }
+  ],
+  "screenshots": [
+    { "src": "screenshots/wide.png", "sizes": "1280x720", "type": "image/png", "form_factor": "wide", "label": "Visão geral" },
+    { "src": "screenshots/narrow-1.png", "sizes": "540x960", "type": "image/png", "form_factor": "narrow", "label": "Visão geral" },
+    { "src": "screenshots/narrow-2.png", "sizes": "540x960", "type": "image/png", "form_factor": "narrow", "label": "Horário de aulas" }
+  ]
+}

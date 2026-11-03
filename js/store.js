@@ -5,14 +5,28 @@ export const COLS = ['subjects', 'events', 'notes', 'schedule'];
 export const state = { subjects: [], events: [], notes: [], schedule: [] };
 export const newId = () => crypto.randomUUID();
 
-const persist = () => localStorage.setItem(KEY, JSON.stringify(state));
+const persist = () => {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(state));
+  } catch {
+    window.dispatchEvent(new Event('studyflow:error'));
+  }
+};
+
+// Carrega só listas de objetos com id; ignora o resto
+const load = data => COLS.forEach(c => {
+  const list = data?.[c];
+  state[c] = Array.isArray(list) ? list.filter(x => x && typeof x.id === 'string') : [];
+});
 
 export async function init() {
-  let data = {};
+  let data;
   try {
-    data = JSON.parse(localStorage.getItem(KEY)) || {};
+    data = JSON.parse(localStorage.getItem(KEY));
   } catch {}
-  COLS.forEach(c => state[c] = data[c] || []);
+  load(data);
+  // Pede ao navegador para não apagar os dados sob pressão de espaço
+  navigator.storage?.persist?.().catch(() => {});
 }
 
 export async function save(col, item) {
@@ -24,5 +38,18 @@ export async function save(col, item) {
 
 export async function remove(col, id) {
   state[col] = state[col].filter(x => x.id !== id);
+  persist();
+}
+
+export const exportData = () =>
+  JSON.stringify({ app: 'studyflow', version: 1, exportedAt: new Date().toISOString(), ...state }, null, 2);
+
+export function importData(text) {
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {}
+  if (!COLS.some(c => Array.isArray(data?.[c]))) throw new Error('Arquivo de backup inválido.');
+  load(data);
   persist();
 }

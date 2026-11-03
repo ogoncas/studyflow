@@ -11,8 +11,10 @@
   --r: 14px;
   --sh: 0 1px 2px #1c1f2a0d, 0 6px 20px #1c1f2a0a;
   --ease: cubic-bezier(.2, .8, .2, 1);
+  color-scheme: light;
 }
 [data-theme=dark] {
+  color-scheme: dark;
   --bg: #0f1117;
   --card: #181b24;
   --text: #e8eaf2;
@@ -36,6 +38,8 @@ body {
   background: var(--bg);
   color: var(--text);
   transition: background .2s;
+  overscroll-behavior-y: none;
+  -webkit-text-size-adjust: 100%;
 }
 h3 {
   margin: 0 0 .6rem;
@@ -48,6 +52,21 @@ a {
 :focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+[hidden] {
+  display: none !important;
+}
+#nav,
+header,
+button,
+.tabs,
+.cal {
+  -webkit-user-select: none;
+  user-select: none;
+}
+button,
+[role=button] {
+  touch-action: manipulation;
 }
 .muted {
   color: var(--muted);
@@ -261,6 +280,7 @@ main {
   flex: 1;
   min-width: 0;
   max-width: 1200px;
+  margin-inline: auto;
   padding: 0 2rem 2rem;
 }
 header {
@@ -269,7 +289,8 @@ header {
   z-index: 4;
   display: flex;
   align-items: center;
-  padding: 1rem 0;
+  gap: .5rem;
+  padding: max(1rem, env(safe-area-inset-top)) 0 1rem;
   margin-bottom: .5rem;
   background: color-mix(in srgb, var(--bg) 85%, transparent);
   backdrop-filter: blur(10px);
@@ -308,11 +329,34 @@ header h2 {
 .item:hover {
   transform: translateX(2px);
 }
+.item.on {
+  background: var(--soft);
+}
+.item .sub {
+  display: block;
+}
+.card[role=button] {
+  cursor: pointer;
+}
 .row {
   display: flex;
   gap: .5rem;
   justify-content: flex-end;
   margin-top: 1rem;
+}
+.row.start {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+.row.between {
+  justify-content: space-between;
+  align-items: center;
+}
+.row > .danger:first-child {
+  margin-right: auto;
+}
+.top {
+  margin-bottom: 1rem;
 }
 .badge {
   display: inline-block;
@@ -384,6 +428,19 @@ header h2 {
 }
 
 /* Calendário */
+.bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.bar b {
+  font-size: 1.1rem;
+}
+.bar > div {
+  display: flex;
+  gap: .4rem;
+}
 .cal {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -437,6 +494,18 @@ header h2 {
   gap: 1rem;
   align-items: start;
 }
+.editor .back {
+  display: none;
+  margin-bottom: .6rem;
+}
+#nTitle {
+  margin-bottom: .4rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+#nBody {
+  min-height: 260px;
+}
 
 /* Diálogo e aviso */
 dialog {
@@ -470,6 +539,14 @@ dialog::backdrop {
 .toast .ic {
   display: grid;
   place-items: center;
+}
+.toast button {
+  padding: 0 0 0 .6rem;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
 }
 
 /* ===== Animações e transições ===== */
@@ -643,6 +720,9 @@ button:active:not(:disabled) { transform: scale(.96); }
   }
 
   .notes { grid-template-columns: 1fr; }
+  .notes.editing .list,
+  .notes:not(.editing) .editor { display: none; }
+  .notes.editing .editor .back { display: inline-flex; }
   .hero { padding: 1.1rem; }
   .stats { width: 100%; }
   .stats div { flex: 1; }
