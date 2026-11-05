@@ -9,15 +9,15 @@ Organizador de estudos que roda no navegador e pode ser instalado como app no PC
 - **Calendário:** provas, trabalhos e eventos por data.
 - **Notas:** anotações com salvamento automático, ligadas a uma matéria.
 - **Matérias:** professor, sala, cor e média calculada a partir das notas.
-- **3 idiomas:** português, inglês e espanhol, escolhidos automaticamente pelo idioma do navegador ou manualmente no seletor do topo. Qualquer outro idioma, ou texto que falte, cai em inglês.
-- **Backup:** exporta e importa todos os dados em um arquivo JSON.
+- **3 idiomas:** português, inglês e espanhol, escolhidos automaticamente pelo idioma do navegador ou manualmente nas configurações. Qualquer outro idioma, ou texto que falte, cai em inglês.
+- **Configurações (⚙):** tema claro, escuro ou do sistema, idioma, backup (exporta e importa todos os dados em um arquivo JSON) e informações do desenvolvedor.
 - **Desfazer** ao excluir, tema claro/escuro e layout responsivo (navegação inferior e gesto de deslizar no celular).
 
 ## Como usar
 
 ### Online
 
-Acesse **[usuario.github.io/studyflow](https://usuario.github.io/studyflow/)**, sem instalar nada.
+Acesse **[ogoncas.github.io/studyflow](https://ogoncas.github.io/studyflow/)**, sem instalar nada.
 
 ### Instalar como app
 
@@ -31,7 +31,7 @@ Depois de instalado, abre em janela própria e funciona sem internet.
 O projeto usa módulos ES e service worker, então precisa ser aberto por um servidor local (abrir o `index.html` direto não funciona):
 
 ```bash
-git clone https://github.com/usuario/studyflow.git
+git clone https://github.com/ogoncas/studyflow.git
 cd studyflow
 python3 -m http.server 8000
 ```

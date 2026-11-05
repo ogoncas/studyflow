@@ -305,12 +305,7 @@ header h2 {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-#langSel {
-  width: auto;
-  padding: .45rem .6rem;
-  font-size: .85rem;
-  cursor: pointer;
-}
+
 
 /* ===== Componentes ===== */
 .grid {
@@ -560,6 +555,75 @@ dialog::backdrop {
   text-decoration: underline;
 }
 
+/* Configurações */
+.settings h3 {
+  margin-bottom: 1rem;
+}
+.settings section {
+  padding: .9rem 0;
+  border-top: 1px solid var(--line);
+}
+.settings section:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
+.settings h4 {
+  margin: 0 0 .6rem;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.settings .muted {
+  margin: 0;
+}
+.settings .row {
+  margin-top: .4rem;
+}
+.seg {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .4rem;
+}
+.seg button {
+  min-width: 0;
+  padding: .55rem .3rem;
+  gap: .3rem;
+  font-size: .85rem;
+}
+.seg button[aria-checked=true] {
+  background: var(--soft);
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 600;
+}
+.about {
+  display: grid;
+  gap: .5rem;
+  margin: 0;
+}
+.about div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.about dt {
+  color: var(--muted);
+}
+.about dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+.msg {
+  min-height: 1.2em;
+  margin: .6rem 0 0;
+  font-size: .85rem;
+}
+.msg.good { color: #10b981; }
+.msg.bad { color: var(--danger); }
+
 /* ===== Animações e transições ===== */
 @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
 @keyframes slide { from { opacity: 0; transform: translateX(calc(var(--dir, 1) * 28px)); } }
@@ -571,7 +635,6 @@ dialog::backdrop {
 @keyframes fadeout { to { opacity: 0; } }
 @keyframes toastin { from { opacity: 0; transform: translate(-50%, 8px) scale(.97); } }
 @keyframes toastout { to { opacity: 0; transform: translate(-50%, 8px); } }
-@keyframes spin { from { transform: rotate(-90deg) scale(.6); opacity: 0; } }
 @keyframes grow { from { transform: scale(.5); opacity: 0; } }
 
 /* Entrada da tela (escalonada) */
@@ -594,7 +657,10 @@ dialog.out { animation: dlgout .18s ease forwards; }
 dialog.out::backdrop { animation: fadeout .18s forwards; }
 .toast { animation: toastin .2s; }
 .toast.bye { animation: toastout .2s forwards; }
-#themeBtn .ic { animation: spin .45s var(--ease); }
+#setBtn .ic { transition: transform .4s var(--ease); }
+@media (hover: hover) {
+  #setBtn:hover .ic { transform: rotate(60deg); }
+}
 .fab { animation: grow .3s var(--ease); }
 
 /* Troca de tema */
@@ -632,11 +698,7 @@ button:active:not(:disabled) { transform: scale(.96); }
 @media (max-width: 800px) {
   body { display: block; }
   main { padding: 0 1rem 6rem; }
-  header h2 { font-size: 1.15rem; }
-  #langSel {
-    padding: .4rem .3rem .4rem .5rem;
-    font-size: .8rem;
-  }
+  header h2 { font-size: 1.3rem; }
   #installBtn span { display: none; }
   #installBtn { padding: .55rem; }
 

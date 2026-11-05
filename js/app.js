@@ -7,7 +7,6 @@ const $ = s => document.querySelector(s);
 const view = $('#view');
 const dlg = $('#dlg');
 const dlgForm = $('#dlgForm');
-const langSel = $('#langSel');
 
 const VIEWS = ['dashboard', 'schedule', 'calendar', 'notes', 'subjects'];
 // Os tipos são guardados em português nos dados; só o rótulo é traduzido
@@ -98,6 +97,7 @@ function renderUser() {
 
 function form(title, fields, item, onOk, onDel) {
   dlg.setAttribute('aria-label', title);
+  dlgForm.className = '';
   dlgForm.innerHTML = `<h3>${title}</h3>` + fields.map(f => `<label>${f.l}` +
     (f.t === 'select'
       ? `<select name="${f.n}">${options(f.o)}</select>`
@@ -192,16 +192,16 @@ function exportBackup() {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
+// Retorna 'done', 'invalid' ou null (cancelado)
 async function importBackup(file) {
-  if (!file) return;
+  if (!file || !confirm(t('backup.confirm'))) return null;
   try {
-    if (!confirm(t('backup.confirm'))) return;
     importData(await file.text());
     noteId = null;
     render();
-    toast(t('backup.done'));
+    return 'done';
   } catch {
-    toast(t('backup.invalid'), { icon: 'alert' });
+    return 'invalid';
   }
 }
 
@@ -232,9 +232,6 @@ const views = {
       <div class="card"><h3>${t('dash.upcoming')}</h3>${eventHtml || `<p class="muted">${t('dash.nothing')}</p>`}</div>
       <div class="card"><h3>${t('dash.shortcuts')}</h3><div class="row start">
         <button data-new="event">${ic('plus')} ${t('new.event')}</button><button data-new="note">${ic('plus')} ${t('new.note')}</button><button data-new="subject">${ic('plus')} ${t('new.subject')}</button></div></div>
-      <div class="card"><h3>${t('backup.title')}</h3><p class="muted">${t('backup.hint')}</p>
-        <div class="row start"><button id="bkExport">${ic('download')} ${t('backup.export')}</button><button id="bkImport">${ic('upload')} ${t('backup.import')}</button></div>
-        <input type="file" id="bkFile" accept="application/json,.json" hidden></div>
     </div>`;
 
     view.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
@@ -244,12 +241,6 @@ const views = {
       else if (k === 'subject') editSubject({});
       else { await newNote(); go('notes'); }
     });
-    $('#bkExport').onclick = exportBackup;
-    $('#bkImport').onclick = () => $('#bkFile').click();
-    $('#bkFile').onchange = async e => {
-      await importBackup(e.target.files[0]);
-      e.target.value = '';
-    };
   },
 
   schedule() {
@@ -401,6 +392,11 @@ const enter = () => {
 };
 
 const go = v => {
+  // Já está nesta tela: não redesenha nem repete a animação
+  if (v === current) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
   if (v !== 'notes') prune(null);
   current = v;
   render();
@@ -408,36 +404,44 @@ const go = v => {
   window.scrollTo(0, 0);
 };
 
-const setTheme = x => {
-  document.documentElement.dataset.theme = x;
-  $('#themeBtn').innerHTML = ic(x === 'dark' ? 'sun' : 'moon');
-  $('meta[name=theme-color]').content = x === 'dark' ? '#0f1117' : '#f5f6fa';
-  try { localStorage.setItem('studyflow-theme', x); } catch {}
+const THEME_KEY = 'studyflow-theme';
+const getThemePref = () => {
+  try {
+    const v = localStorage.getItem(THEME_KEY);
+    return v === 'light' || v === 'dark' ? v : 'auto';
+  } catch {
+    return 'auto';
+  }
 };
 
-document.querySelectorAll('#nav nav button').forEach(b => b.onclick = () => go(b.dataset.view));
-$('#themeBtn').onclick = () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
-setTheme(document.documentElement.dataset.theme || 'light');
-
-/* ===== Idioma ===== */
-function fillLangSel() {
-  langSel.innerHTML = `<option value="auto">${t('langAuto')}</option>` +
-    Object.entries(LANGS).map(([code, name]) => `<option value="${code}">${name}</option>`).join('');
-  langSel.value = getPref();
+// 'auto' segue o tema do sistema
+function applyTheme() {
+  const pref = getThemePref();
+  const dark = pref === 'dark' || (pref === 'auto' && matchMedia('(prefers-color-scheme:dark)').matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  $('meta[name=theme-color]').content = dark ? '#0f1117' : '#f5f6fa';
 }
 
+function setThemePref(pref) {
+  try {
+    if (pref === 'auto') localStorage.removeItem(THEME_KEY);
+    else localStorage.setItem(THEME_KEY, pref);
+  } catch {}
+  applyTheme();
+}
+
+document.querySelectorAll('#nav nav button').forEach(b => b.onclick = () => go(b.dataset.view));
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change', applyTheme);
+applyTheme();
+
+/* ===== Idioma ===== */
 // Reaplica o idioma em tudo que já está na tela
 function refreshLang() {
   applyStatic();
-  fillLangSel();
   renderUser();
   render();
+  if (dlg.open && dlgForm.classList.contains('settings')) renderSettings();
 }
-
-langSel.onchange = () => {
-  setLang(langSel.value);
-  refreshLang();
-};
 
 // No modo automático, acompanha mudanças de idioma do navegador
 window.addEventListener('languagechange', () => {
@@ -445,6 +449,56 @@ window.addEventListener('languagechange', () => {
   setLang('auto');
   refreshLang();
 });
+
+/* ===== Configurações ===== */
+const DEV = { name: 'Mateus Gonçalves', repo: 'ogoncas/studyflow' };
+const THEMES = [['light', 'sun', 'theme.light'], ['dark', 'moon', 'theme.dark'], ['auto', 'monitor', 'theme.system']];
+
+function renderSettings() {
+  const themePref = getThemePref();
+  dlg.setAttribute('aria-label', t('settings'));
+  dlgForm.className = 'settings';
+  dlgForm.onsubmit = e => e.preventDefault();
+  dlgForm.innerHTML = `<h3>${t('settings')}</h3>
+    <section><h4>${t('settings.theme')}</h4><div class="seg" role="radiogroup" aria-label="${t('settings.theme')}">${THEMES.map(([v, icon, key]) => `<button type="button" role="radio" aria-checked="${v === themePref}" data-theme-opt="${v}">${ic(icon)} ${t(key)}</button>`).join('')}</div></section>
+    <section><h4>${t('language')}</h4><select id="langSel" aria-label="${t('language')}"><option value="auto">${t('langAuto')}</option>${Object.entries(LANGS).map(([c, n]) => `<option value="${c}">${n}</option>`).join('')}</select></section>
+    <section><h4>${t('backup.title')}</h4><p class="muted">${t('backup.hint')}</p>
+      <div class="row start"><button type="button" id="bkExport">${ic('download')} ${t('backup.export')}</button><button type="button" id="bkImport">${ic('upload')} ${t('backup.import')}</button></div>
+      <input type="file" id="bkFile" accept="application/json,.json" hidden><p class="msg" id="setMsg" role="status"></p></section>
+    <section><h4>${t('about.title')}</h4><dl class="about">
+      <div><dt>${t('about.developer')}</dt><dd>${DEV.name}</dd></div>
+      <div><dt>GitHub</dt><dd><a href="https://github.com/${DEV.repo}" target="_blank" rel="noopener noreferrer">${DEV.repo}</a></dd></div>
+      <div><dt>${t('about.license')}</dt><dd>${t('about.openSource')}</dd></div></dl></section>
+    <div class="row"><button type="button" class="primary" id="setClose">${t('form.close')}</button></div>`;
+
+  $('#langSel').value = getPref();
+  dlgForm.querySelectorAll('[data-theme-opt]').forEach(b => b.onclick = () => {
+    setThemePref(b.dataset.themeOpt);
+    dlgForm.querySelectorAll('[data-theme-opt]').forEach(x => x.setAttribute('aria-checked', x === b));
+  });
+  $('#langSel').onchange = e => {
+    setLang(e.target.value);
+    refreshLang();
+    $('#langSel').focus();
+  };
+  $('#bkExport').onclick = exportBackup;
+  $('#bkImport').onclick = () => $('#bkFile').click();
+  $('#bkFile').onchange = async e => {
+    const res = await importBackup(e.target.files[0]);
+    e.target.value = '';
+    if (!res) return;
+    const msg = $('#setMsg');
+    msg.className = 'msg ' + (res === 'done' ? 'good' : 'bad');
+    msg.textContent = t(res === 'done' ? 'backup.done' : 'backup.invalid');
+  };
+  $('#setClose').onclick = () => shut();
+}
+
+function openSettings() {
+  renderSettings();
+  if (!dlg.open) dlg.showModal();
+}
+$('#setBtn').onclick = openSettings;
 
 /* ===== Comportamentos globais ===== */
 // Itens clicáveis também respondem a Enter e Espaço
@@ -500,7 +554,6 @@ if ('serviceWorker' in navigator) {
 setLang(getPref());
 hydrate();
 applyStatic();
-fillLangSel();
 init().then(() => {
   renderUser();
   render();
