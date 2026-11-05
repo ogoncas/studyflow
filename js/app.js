@@ -1,49 +1,50 @@
 import { ic, hydrate } from './icons.js';
 import { state, init, save, remove, newId, exportData, importData } from './store.js';
+import { t, setLang, getPref, locale, applyStatic, LANGS } from './i18n.js';
 
 /* ===== Constantes e utilitários ===== */
 const $ = s => document.querySelector(s);
 const view = $('#view');
 const dlg = $('#dlg');
 const dlgForm = $('#dlgForm');
+const langSel = $('#langSel');
 
-const DAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+const VIEWS = ['dashboard', 'schedule', 'calendar', 'notes', 'subjects'];
+// Os tipos são guardados em português nos dados; só o rótulo é traduzido
 const TYPES = ['Prova', 'Trabalho', 'Evento'];
 const TYPE_COLORS = { Prova: '#e5484d', Trabalho: '#f59e0b', Evento: '#10b981' };
-const TITLES = { dashboard: 'Visão geral', schedule: 'Horário de aulas', calendar: 'Calendário', notes: 'Anotações', subjects: 'Matérias' };
-const QUOTES = [
-  'Pequenos passos todos os dias levam longe.',
-  'Foco no processo, o resultado vem.',
-  'Estudar hoje é liberdade amanhã.',
-  'Disciplina vence motivação.',
-  'Um bloco de cada vez.'
-];
 
 // Tudo que vem do armazenamento (ou de um backup) passa por esc/safeColor/typeOf antes de ir ao HTML
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const safeColor = c => /^#[0-9a-f]{3,8}$/i.test(c) ? c : '#888';
-const typeOf = t => TYPES.includes(t) ? t : 'Evento';
+const typeOf = x => TYPES.includes(x) ? x : 'Evento';
+const typeLabel = x => t('type.' + typeOf(x));
 const options = (list, sel) => list.map(o => `<option value="${esc(o[0])}"${o[0] === sel ? ' selected' : ''}>${esc(o[1])}</option>`).join('');
 
+const cap = s => s[0].toUpperCase() + s.slice(1);
+const dayName = i => cap(new Date(2023, 0, 1 + i).toLocaleDateString(locale(), { weekday: 'long' }));
+const dayShort = i => dayName(i).slice(0, 3);
+
+const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s);
 const todayISO = () => new Date().toLocaleDateString('sv');
-const fmtDate = iso => iso.split('-').reverse().slice(0, 2).join('/');
+const fmtDate = iso => new Date(iso + 'T00:00').toLocaleDateString(locale(), { day: '2-digit', month: '2-digit' });
 const daysUntil = iso => Math.round((new Date(iso + 'T00:00') - new Date(todayISO() + 'T00:00')) / 864e5);
-const inDays = n => n === 0 ? 'hoje' : n === 1 ? 'amanhã' : `em ${n} dias`;
+const inDays = n => n === 0 ? t('when.today') : n === 1 ? t('when.tomorrow') : t('when.days', { n });
 const greet = () => {
   const h = new Date().getHours();
-  return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
+  return t(h < 12 ? 'greet.morning' : h < 18 ? 'greet.afternoon' : 'greet.evening');
 };
 
 const byStart = (a, b) => a.start.localeCompare(b.start);
 const subj = id => state.subjects.find(s => s.id === id);
-const subjOpts = () => [['', '— Nenhuma —'], ...state.subjects.map(s => [s.id, s.name])];
+const subjOpts = () => [['', t('form.none')], ...state.subjects.map(s => [s.id, s.name])];
 const avg = s => {
   const n = (s || '').split(/[;\s]+/).map(x => parseFloat(x.replace(',', '.'))).filter(x => !isNaN(x));
   return n.length ? (n.reduce((a, b) => a + b) / n.length).toFixed(1) : '—';
 };
 
 const initialView = new URLSearchParams(location.search).get('view');
-let current = initialView in TITLES ? initialView : 'dashboard';
+let current = VIEWS.includes(initialView) ? initialView : 'dashboard';
 let cursor = new Date();
 let noteId = null;
 let schedDay = null;
@@ -67,20 +68,20 @@ const anim = (sel, dir) => {
 // Aviso temporário; opts.action = { label, run } adiciona um botão (ex.: Desfazer)
 const toast = (msg, opts = {}) => {
   $('.toast')?.remove();
-  const t = document.createElement('div');
-  t.className = 'toast';
-  t.setAttribute('role', 'status');
-  t.innerHTML = `${ic(opts.icon || 'check')} ${esc(msg)}`;
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.setAttribute('role', 'status');
+  el.innerHTML = `${ic(opts.icon || 'check')} ${esc(msg)}`;
   if (opts.action) {
     const b = document.createElement('button');
     b.textContent = opts.action.label;
-    b.onclick = () => { opts.action.run(); t.remove(); };
-    t.append(b);
+    b.onclick = () => { opts.action.run(); el.remove(); };
+    el.append(b);
   }
-  document.body.append(t);
+  document.body.append(el);
   setTimeout(() => {
-    t.classList.add('bye');
-    setTimeout(() => t.remove(), 200);
+    el.classList.add('bye');
+    setTimeout(() => el.remove(), 200);
   }, opts.action ? 5000 : 1800);
 };
 
@@ -88,11 +89,11 @@ const toast = (msg, opts = {}) => {
 async function del(col, item) {
   await remove(col, item.id);
   render();
-  toast('Removido', { action: { label: 'Desfazer', run: async () => { await save(col, item); render(); } } });
+  toast(t('form.removed'), { action: { label: t('form.undo'), run: async () => { await save(col, item); render(); } } });
 }
 
 function renderUser() {
-  $('#userBox').innerHTML = `<p class="muted">${ic('drive')} Funciona offline. Dados salvos neste dispositivo.</p>`;
+  $('#userBox').innerHTML = `<p class="muted">${ic('drive')} ${t('offlineNote')}</p>`;
 }
 
 function form(title, fields, item, onOk, onDel) {
@@ -103,8 +104,8 @@ function form(title, fields, item, onOk, onDel) {
       : `<input name="${f.n}" type="${f.t || 'text'}" autocomplete="off"${f.p ? ` placeholder="${f.p}"` : ''}${f.r ? ' required' : ''}>`) +
     `</label>`).join('') +
     `<p class="err" role="alert"></p><div class="row">` +
-    (onDel ? `<button type="button" class="danger" id="dlgD">Excluir</button>` : '') +
-    `<button type="button" id="dlgX">Cancelar</button><button class="primary">Salvar</button></div>`;
+    (onDel ? `<button type="button" class="danger" id="dlgD">${t('form.delete')}</button>` : '') +
+    `<button type="button" id="dlgX">${t('form.cancel')}</button><button class="primary">${t('form.save')}</button></div>`;
 
   fields.forEach(f => dlgForm.elements[f.n].value = item?.[f.n] ?? f.d ?? '');
 
@@ -123,7 +124,7 @@ function form(title, fields, item, onOk, onDel) {
       const msg = await onOk(Object.fromEntries(new FormData(dlgForm)));
       shut();
       render();
-      toast(msg || 'Salvo');
+      toast(msg || t('form.saved'));
     } catch (x) {
       dlgForm.querySelector('.err').textContent = x.message;
       btn.disabled = false;
@@ -133,37 +134,37 @@ function form(title, fields, item, onOk, onDel) {
 }
 
 /* ===== Formulários de cada item ===== */
-const editClass = item => form(item.id ? 'Editar aula' : 'Nova aula', [
-  { n: 'subjectId', l: 'Matéria', t: 'select', o: subjOpts() },
-  { n: 'start', l: 'Início', t: 'time', d: '08:00', r: 1 },
-  { n: 'end', l: 'Fim', t: 'time', d: '09:00', r: 1 }
+const editClass = item => form(item.id ? t('class.edit') : t('class.new'), [
+  { n: 'subjectId', l: t('subject.label'), t: 'select', o: subjOpts() },
+  { n: 'start', l: t('class.start'), t: 'time', d: '08:00', r: 1 },
+  { n: 'end', l: t('class.end'), t: 'time', d: '09:00', r: 1 }
 ], item,
   d => {
-    if (d.end <= d.start) throw new Error('O fim deve ser depois do início.');
+    if (d.end <= d.start) throw new Error(t('class.errEnd'));
     return save('schedule', { ...item, ...d, id: item.id || newId() });
   },
   item.id && (() => del('schedule', item)));
 
-const editEvent = item => form(item.id ? 'Editar evento' : 'Novo evento', [
-  { n: 'title', l: 'Título', r: 1 },
-  { n: 'date', l: 'Data', t: 'date', r: 1 },
-  { n: 'type', l: 'Tipo', t: 'select', o: TYPES.map(t => [t, t]) }
+const editEvent = item => form(item.id ? t('event.edit') : t('event.new'), [
+  { n: 'title', l: t('event.title'), r: 1 },
+  { n: 'date', l: t('event.date'), t: 'date', r: 1 },
+  { n: 'type', l: t('event.type'), t: 'select', o: TYPES.map(x => [x, typeLabel(x)]) }
 ], item,
   d => {
-    if (!d.title.trim()) throw new Error('Informe um título.');
+    if (!d.title.trim()) throw new Error(t('event.errTitle'));
     return save('events', { ...item, ...d, id: item.id || newId() });
   },
   item.id && (() => del('events', item)));
 
-const editSubject = item => form(item.id ? 'Editar matéria' : 'Nova matéria', [
-  { n: 'name', l: 'Nome', r: 1 },
-  { n: 'teacher', l: 'Professor' },
-  { n: 'room', l: 'Sala' },
-  { n: 'color', l: 'Cor', t: 'color', d: '#4f6df5' },
-  { n: 'grades', l: 'Notas (separe por espaço)', p: '8,5 7 9' }
+const editSubject = item => form(item.id ? t('subject.edit') : t('subject.new'), [
+  { n: 'name', l: t('subject.name'), r: 1 },
+  { n: 'teacher', l: t('subject.teacher') },
+  { n: 'room', l: t('subject.room') },
+  { n: 'color', l: t('subject.color'), t: 'color', d: '#4f6df5' },
+  { n: 'grades', l: t('subject.grades'), p: '8,5 7 9' }
 ], item,
   d => {
-    if (!d.name.trim()) throw new Error('Informe o nome.');
+    if (!d.name.trim()) throw new Error(t('subject.errName'));
     return save('subjects', { ...item, ...d, id: item.id || newId() });
   },
   item.id && (() => del('subjects', item)));
@@ -194,45 +195,45 @@ function exportBackup() {
 async function importBackup(file) {
   if (!file) return;
   try {
-    if (!confirm('Importar substitui todos os dados atuais. Continuar?')) return;
+    if (!confirm(t('backup.confirm'))) return;
     importData(await file.text());
     noteId = null;
     render();
-    toast('Backup importado');
-  } catch (x) {
-    toast(x.message, { icon: 'alert' });
+    toast(t('backup.done'));
+  } catch {
+    toast(t('backup.invalid'), { icon: 'alert' });
   }
 }
 
 /* ===== Telas ===== */
 const views = {
   dashboard() {
-    const t = new Date().getDay();
+    const day = new Date().getDay();
     const hm = new Date().toTimeString().slice(0, 5);
-    const classes = state.schedule.filter(c => c.day == t).sort(byStart);
-    const upcoming = state.events.filter(e => e.date >= todayISO()).sort((a, b) => a.date.localeCompare(b.date));
+    const classes = state.schedule.filter(c => c.day == day).sort(byStart);
+    const upcoming = state.events.filter(e => isDate(e.date) && e.date >= todayISO()).sort((a, b) => a.date.localeCompare(b.date));
     const week = upcoming.filter(e => daysUntil(e.date) <= 7).length;
 
     const classHtml = classes.map(c => {
       const s = subj(c.subjectId);
       const now = c.start <= hm && hm < c.end;
-      return `<div class="item" role="button" tabindex="0" data-go="schedule" style="border-color:${safeColor(s?.color)}"><b>${esc(c.start)}–${esc(c.end)}</b> ${esc(s?.name || 'Aula')}${now ? ' <span class="badge">Agora</span>' : ''}</div>`;
+      return `<div class="item" role="button" tabindex="0" data-go="schedule" style="border-color:${safeColor(s?.color)}"><b>${esc(c.start)}–${esc(c.end)}</b> ${esc(s?.name || t('sched.defaultName'))}${now ? ` <span class="badge">${t('dash.now')}</span>` : ''}</div>`;
     }).join('');
 
     const eventHtml = upcoming.slice(0, 5).map(e => {
       const type = typeOf(e.type);
-      return `<div class="item" role="button" tabindex="0" data-go="calendar" style="border-color:${TYPE_COLORS[type]}"><b>${fmtDate(e.date)}</b><span>${esc(e.title)}<span class="muted sub">${type} · ${inDays(daysUntil(e.date))}</span></span></div>`;
+      return `<div class="item" role="button" tabindex="0" data-go="calendar" style="border-color:${TYPE_COLORS[type]}"><b>${fmtDate(e.date)}</b><span>${esc(e.title)}<span class="muted sub">${typeLabel(type)} · ${inDays(daysUntil(e.date))}</span></span></div>`;
     }).join('');
 
-    view.innerHTML = `<div class="hero"><div><h3>${greet()}!</h3><p>${QUOTES[new Date().getDate() % QUOTES.length]}</p></div>
-      <div class="stats"><div><b>${classes.length}</b><span>aulas hoje</span></div><div><b>${week}</b><span>em 7 dias</span></div><div><b>${state.subjects.length}</b><span>matérias</span></div></div></div>
+    view.innerHTML = `<div class="hero"><div><h3>${greet()}!</h3><p>${t('quote.' + new Date().getDate() % 5)}</p></div>
+      <div class="stats"><div><b>${classes.length}</b><span>${t('dash.classesToday')}</span></div><div><b>${week}</b><span>${t('dash.in7')}</span></div><div><b>${state.subjects.length}</b><span>${t('dash.subjects')}</span></div></div></div>
     <div class="grid">
-      <div class="card"><h3>Hoje (${DAYS[t]})</h3>${classHtml || '<p class="muted">Sem aulas hoje.</p>'}</div>
-      <div class="card"><h3>Próximas entregas</h3>${eventHtml || '<p class="muted">Nada agendado.</p>'}</div>
-      <div class="card"><h3>Atalhos</h3><div class="row start">
-        <button data-new="event">${ic('plus')} Evento</button><button data-new="note">${ic('plus')} Nota</button><button data-new="subject">${ic('plus')} Matéria</button></div></div>
-      <div class="card"><h3>Backup</h3><p class="muted">Salve seus dados em um arquivo para guardar ou levar a outro aparelho.</p>
-        <div class="row start"><button id="bkExport">${ic('download')} Exportar</button><button id="bkImport">${ic('upload')} Importar</button></div>
+      <div class="card"><h3>${t('dash.today', { day: dayName(day) })}</h3>${classHtml || `<p class="muted">${t('dash.noClasses')}</p>`}</div>
+      <div class="card"><h3>${t('dash.upcoming')}</h3>${eventHtml || `<p class="muted">${t('dash.nothing')}</p>`}</div>
+      <div class="card"><h3>${t('dash.shortcuts')}</h3><div class="row start">
+        <button data-new="event">${ic('plus')} ${t('new.event')}</button><button data-new="note">${ic('plus')} ${t('new.note')}</button><button data-new="subject">${ic('plus')} ${t('new.subject')}</button></div></div>
+      <div class="card"><h3>${t('backup.title')}</h3><p class="muted">${t('backup.hint')}</p>
+        <div class="row start"><button id="bkExport">${ic('download')} ${t('backup.export')}</button><button id="bkImport">${ic('upload')} ${t('backup.import')}</button></div>
         <input type="file" id="bkFile" accept="application/json,.json" hidden></div>
     </div>`;
 
@@ -266,18 +267,18 @@ const views = {
       return { start: last.end, end: `${String(Math.min(23, +h + 1)).padStart(2, '0')}:${m}` };
     };
 
-    const tabs = days.map(d => `<button data-tab="${d}" class="${d == schedDay ? 'on' : ''}">${DAYS[d].slice(0, 3)}${list(d).length ? `<em>${list(d).length}</em>` : ''}${d == today ? '<i class="dot"></i>' : ''}</button>`).join('');
+    const tabs = days.map(d => `<button data-tab="${d}" class="${d == schedDay ? 'on' : ''}">${dayShort(d)}${list(d).length ? `<em>${list(d).length}</em>` : ''}${d == today ? '<i class="dot"></i>' : ''}</button>`).join('');
 
     const cols = days.map(d => {
       const items = list(d).map(c => {
         const s = subj(c.subjectId);
-        return `<div class="item cls" role="button" tabindex="0" data-id="${esc(c.id)}" style="border-color:${safeColor(s?.color)}"><div><b>${esc(s?.name || 'Aula')}</b><span class="muted">${esc(c.start)}–${esc(c.end)}${s?.room ? ' · Sala ' + esc(s.room) : ''}</span></div></div>`;
+        return `<div class="item cls" role="button" tabindex="0" data-id="${esc(c.id)}" style="border-color:${safeColor(s?.color)}"><div><b>${esc(s?.name || t('sched.defaultName'))}</b><span class="muted">${esc(c.start)}–${esc(c.end)}${s?.room ? ' · ' + esc(t('room', { n: s.room })) : ''}</span></div></div>`;
       }).join('');
-      return `<div class="card day ${d == today ? 'is-today' : ''} ${d == schedDay ? 'sel' : ''}"><h3>${DAYS[d]}</h3>${items || '<p class="muted empty">Sem aulas neste dia.</p>'}<button class="add" data-day="${d}">${ic('plus')} Aula</button></div>`;
+      return `<div class="card day ${d == today ? 'is-today' : ''} ${d == schedDay ? 'sel' : ''}"><h3>${dayName(d)}</h3>${items || `<p class="muted empty">${t('sched.empty')}</p>`}<button class="add" data-day="${d}">${ic('plus')} ${t('sched.add')}</button></div>`;
     }).join('');
 
     view.innerHTML = `<div class="tabs">${tabs}</div><div class="week">${cols}</div>
-      <button class="fab" aria-label="Adicionar aula">${ic('plus')}</button>`;
+      <button class="fab" aria-label="${t('sched.addAria')}">${ic('plus')}</button>`;
 
     const pick = d => {
       const dir = d > schedDay ? 1 : -1;
@@ -306,20 +307,20 @@ const views = {
     const m = cursor.getMonth();
     const first = new Date(y, m, 1).getDay();
     const n = new Date(y, m + 1, 0).getDate();
-    const month = cursor.toLocaleDateString('pt-BR', { month: 'long' });
-    const label = `${month[0].toUpperCase()}${month.slice(1)} de ${y}`;
+    const label = cap(cursor.toLocaleDateString(locale(), { month: 'long', year: 'numeric' }));
 
     let cells = '<div></div>'.repeat(first);
     for (let d = 1; d <= n; d++) {
       const iso = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const aria = new Date(y, m, d).toLocaleDateString(locale(), { day: 'numeric', month: 'long' });
       const chips = state.events.filter(e => e.date === iso)
         .map(e => `<span class="chip t-${typeOf(e.type)}" role="button" tabindex="0" data-id="${esc(e.id)}">${esc(e.title)}</span>`).join('');
-      cells += `<div class="d${iso === todayISO() ? ' today' : ''}" role="button" tabindex="0" aria-label="${d} de ${month}" data-date="${iso}">${d}${chips}</div>`;
+      cells += `<div class="d${iso === todayISO() ? ' today' : ''}" role="button" tabindex="0" aria-label="${aria}" data-date="${iso}">${d}${chips}</div>`;
     }
 
-    view.innerHTML = `<div class="bar"><button id="calPrev" aria-label="Mês anterior">${ic('left')}</button><b>${label}</b>
-      <div><button id="calToday">Hoje</button><button id="calNext" aria-label="Próximo mês">${ic('right')}</button></div></div>
-      <div class="cal">${DAYS.map(d => `<b class="muted">${d.slice(0, 3)}</b>`).join('')}${cells}</div>`;
+    view.innerHTML = `<div class="bar"><button id="calPrev" aria-label="${t('cal.prev')}">${ic('left')}</button><b>${label}</b>
+      <div><button id="calToday">${t('cal.today')}</button><button id="calNext" aria-label="${t('cal.next')}">${ic('right')}</button></div></div>
+      <div class="cal">${[0, 1, 2, 3, 4, 5, 6].map(d => `<b class="muted">${dayShort(d)}</b>`).join('')}${cells}</div>`;
 
     $('#calPrev').onclick = () => { cursor = new Date(y, m - 1, 1); render(); anim('.cal', -1); };
     $('#calNext').onclick = () => { cursor = new Date(y, m + 1, 1); render(); anim('.cal', 1); };
@@ -335,17 +336,17 @@ const views = {
     const sel = state.notes.find(n => n.id === noteId);
     const sorted = [...state.notes].sort((a, b) => (b.updated || 0) - (a.updated || 0));
 
-    const listHtml = sorted.map(n => `<div class="item${n.id === noteId ? ' on' : ''}" role="button" tabindex="0" data-id="${esc(n.id)}"><span>${esc(n.title || 'Sem título')}</span></div>`).join('');
+    const listHtml = sorted.map(n => `<div class="item${n.id === noteId ? ' on' : ''}" role="button" tabindex="0" data-id="${esc(n.id)}"><span>${esc(n.title || t('notes.untitled'))}</span></div>`).join('');
     const editor = sel
-      ? `<button class="back" id="nBack">${ic('left')} Notas</button>
-         <input id="nTitle" value="${esc(sel.title)}" placeholder="Título" aria-label="Título">
-         <label>Matéria<select id="nSubj">${options(subjOpts(), sel.subjectId)}</select></label>
-         <textarea id="nBody" rows="14" placeholder="Escreva aqui..." aria-label="Anotação">${esc(sel.body)}</textarea>
-         <div class="row between"><span class="muted">Salvo automaticamente</span><button class="danger" id="nDel">Excluir</button></div>`
-      : '<p class="muted">Selecione ou crie uma nota.</p>';
+      ? `<button class="back" id="nBack">${ic('left')} ${t('notes.back')}</button>
+         <input id="nTitle" value="${esc(sel.title)}" placeholder="${t('notes.titlePh')}" aria-label="${t('notes.titlePh')}">
+         <label>${t('subject.label')}<select id="nSubj">${options(subjOpts(), sel.subjectId)}</select></label>
+         <textarea id="nBody" rows="14" placeholder="${t('notes.bodyPh')}" aria-label="${t('notes.body')}">${esc(sel.body)}</textarea>
+         <div class="row between"><span class="muted">${t('notes.autosave')}</span><button class="danger" id="nDel">${t('form.delete')}</button></div>`
+      : `<p class="muted">${t('notes.pick')}</p>`;
 
     view.innerHTML = `<div class="notes${sel ? ' editing' : ''}">
-      <div class="card list"><button class="primary" id="nNew">${ic('plus')} Nova nota</button>${listHtml}</div>
+      <div class="card list"><button class="primary" id="nNew">${ic('plus')} ${t('notes.new')}</button>${listHtml}</div>
       <div class="card editor">${editor}</div></div>`;
 
     $('#nNew').onclick = async () => { await newNote(); render(); $('#nTitle')?.focus(); };
@@ -359,7 +360,7 @@ const views = {
       Object.assign(sel, { title: $('#nTitle').value, body: $('#nBody').value, subjectId: $('#nSubj').value, updated: Date.now() });
       save('notes', sel);
       const label = view.querySelector(`.list .item[data-id="${sel.id}"] span`);
-      if (label) label.textContent = sel.title || 'Sem título';
+      if (label) label.textContent = sel.title || t('notes.untitled');
     };
     ['#nTitle', '#nBody', '#nSubj'].forEach(s => $(s).addEventListener('input', commit));
     $('#nDel').onclick = async () => { noteId = null; await del('notes', sel); };
@@ -367,13 +368,13 @@ const views = {
 
   subjects() {
     const cards = state.subjects.map(s => {
-      const info = [s.teacher, s.room && `Sala ${s.room}`].filter(Boolean).map(esc).join(' · ');
+      const info = [s.teacher, s.room && t('room', { n: s.room })].filter(Boolean).map(esc).join(' · ');
       return `<div class="card" role="button" tabindex="0" data-id="${esc(s.id)}" style="border-top:4px solid ${safeColor(s.color)}">
-        <h3>${esc(s.name)}</h3><p class="muted">${info || 'Sem detalhes'}</p><span class="badge">Média ${avg(s.grades)}</span></div>`;
+        <h3>${esc(s.name)}</h3><p class="muted">${info || t('subject.noDetails')}</p><span class="badge">${t('subject.avg', { n: avg(s.grades) })}</span></div>`;
     }).join('');
 
-    view.innerHTML = `<div class="top"><button class="primary" id="sNew">${ic('plus')} Nova matéria</button></div>
-      <div class="grid">${cards || '<p class="muted">Nenhuma matéria cadastrada.</p>'}</div>`;
+    view.innerHTML = `<div class="top"><button class="primary" id="sNew">${ic('plus')} ${t('subject.new')}</button></div>
+      <div class="grid">${cards || `<p class="muted">${t('subject.empty')}</p>`}</div>`;
 
     $('#sNew').onclick = () => editSubject({});
     view.querySelectorAll('.card[data-id]').forEach(c => c.onclick = () => editSubject(state.subjects.find(s => s.id === c.dataset.id)));
@@ -382,7 +383,7 @@ const views = {
 
 /* ===== Navegação e tema ===== */
 function render() {
-  $('#title').textContent = TITLES[current];
+  $('#title').textContent = t('title.' + current);
   document.querySelectorAll('#nav nav button').forEach(b => {
     const on = b.dataset.view === current;
     b.classList.toggle('on', on);
@@ -407,17 +408,45 @@ const go = v => {
   window.scrollTo(0, 0);
 };
 
-const setTheme = t => {
-  document.documentElement.dataset.theme = t;
-  $('#themeBtn').innerHTML = ic(t === 'dark' ? 'sun' : 'moon');
-  $('meta[name=theme-color]').content = t === 'dark' ? '#0f1117' : '#f5f6fa';
-  try { localStorage.setItem('studyflow-theme', t); } catch {}
+const setTheme = x => {
+  document.documentElement.dataset.theme = x;
+  $('#themeBtn').innerHTML = ic(x === 'dark' ? 'sun' : 'moon');
+  $('meta[name=theme-color]').content = x === 'dark' ? '#0f1117' : '#f5f6fa';
+  try { localStorage.setItem('studyflow-theme', x); } catch {}
 };
 
 document.querySelectorAll('#nav nav button').forEach(b => b.onclick = () => go(b.dataset.view));
 $('#themeBtn').onclick = () => setTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
 setTheme(document.documentElement.dataset.theme || 'light');
 
+/* ===== Idioma ===== */
+function fillLangSel() {
+  langSel.innerHTML = `<option value="auto">${t('langAuto')}</option>` +
+    Object.entries(LANGS).map(([code, name]) => `<option value="${code}">${name}</option>`).join('');
+  langSel.value = getPref();
+}
+
+// Reaplica o idioma em tudo que já está na tela
+function refreshLang() {
+  applyStatic();
+  fillLangSel();
+  renderUser();
+  render();
+}
+
+langSel.onchange = () => {
+  setLang(langSel.value);
+  refreshLang();
+};
+
+// No modo automático, acompanha mudanças de idioma do navegador
+window.addEventListener('languagechange', () => {
+  if (getPref() !== 'auto') return;
+  setLang('auto');
+  refreshLang();
+});
+
+/* ===== Comportamentos globais ===== */
 // Itens clicáveis também respondem a Enter e Espaço
 document.addEventListener('keydown', e => {
   if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[role=button]')) {
@@ -426,13 +455,20 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// Clicar fora do diálogo fecha
-dlg.addEventListener('click', e => {
+// Clicar fora do diálogo fecha, mas só se o clique também começou fora
+// (evita fechar ao soltar o mouse depois de selecionar texto)
+const outside = e => {
   const r = dlg.getBoundingClientRect();
-  if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) shut();
+  return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
+};
+let pressedOutside = false;
+dlg.addEventListener('pointerdown', e => { pressedOutside = e.target === dlg && outside(e); });
+dlg.addEventListener('click', e => {
+  if (pressedOutside && outside(e)) shut();
+  pressedOutside = false;
 });
 
-window.addEventListener('studyflow:error', () => toast('Não foi possível salvar os dados.', { icon: 'alert' }));
+window.addEventListener('studyflow:error', () => toast(t('err.save'), { icon: 'alert' }));
 
 /* ===== Instalação (PWA) ===== */
 const installBtn = $('#installBtn');
@@ -453,7 +489,7 @@ installBtn.onclick = async () => {
 };
 window.addEventListener('appinstalled', () => {
   installBtn.hidden = true;
-  toast('App instalado');
+  toast(t('installed'));
 });
 
 if ('serviceWorker' in navigator) {
@@ -461,7 +497,10 @@ if ('serviceWorker' in navigator) {
 }
 
 /* ===== Inicialização ===== */
+setLang(getPref());
 hydrate();
+applyStatic();
+fillLangSel();
 init().then(() => {
   renderUser();
   render();

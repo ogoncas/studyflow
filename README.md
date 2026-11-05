@@ -9,6 +9,7 @@ Organizador de estudos que roda no navegador e pode ser instalado como app no PC
 - **Calendário:** provas, trabalhos e eventos por data.
 - **Notas:** anotações com salvamento automático, ligadas a uma matéria.
 - **Matérias:** professor, sala, cor e média calculada a partir das notas.
+- **3 idiomas:** português, inglês e espanhol, escolhidos automaticamente pelo idioma do navegador ou manualmente no seletor do topo. Qualquer outro idioma, ou texto que falte, cai em inglês.
 - **Backup:** exporta e importa todos os dados em um arquivo JSON.
 - **Desfazer** ao excluir, tema claro/escuro e layout responsivo (navegação inferior e gesto de deslizar no celular).
 
@@ -16,7 +17,7 @@ Organizador de estudos que roda no navegador e pode ser instalado como app no PC
 
 ### Online
 
-Acesse **[ogoncas.github.io/studyflow](https://ogoncas.github.io/studyflow/)**, sem instalar nada.
+Acesse **[usuario.github.io/studyflow](https://usuario.github.io/studyflow/)**, sem instalar nada.
 
 ### Instalar como app
 
@@ -30,12 +31,16 @@ Depois de instalado, abre em janela própria e funciona sem internet.
 O projeto usa módulos ES e service worker, então precisa ser aberto por um servidor local (abrir o `index.html` direto não funciona):
 
 ```bash
-git clone https://github.com/ogoncas/studyflow.git
+git clone https://github.com/usuario/studyflow.git
 cd studyflow
 python3 -m http.server 8000
 ```
 
 Depois acesse `http://localhost:8000`.
+
+## Adicionar um idioma
+
+Em `js/i18n.js`, copie o bloco `en` dentro de `dictionaries`, traduza os valores e inclua o nome do idioma em `LANGS` e o código em `LOCALES`. Chaves que faltarem usam o texto em inglês.
 
 ## Publicar no GitHub Pages
 
@@ -50,6 +55,7 @@ sw.js                  # service worker (offline)
 css/style.css
 js/app.js              # telas, formulários, navegação e instalação
 js/store.js            # estado, persistência e backup
+js/i18n.js             # idiomas (pt, en, es) e detecção automática
 js/icons.js            # ícones SVG inline
 icons/                 # ícones do app (PNG, maskable e SVG)
 screenshots/           # imagens do diálogo de instalação

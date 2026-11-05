@@ -121,6 +121,7 @@ button.danger {
   color: var(--danger);
 }
 button.ghost {
+  padding: .55rem;
   background: none;
   border-color: transparent;
   font-size: 1.2rem;
@@ -297,8 +298,18 @@ header {
 }
 header h2 {
   flex: 1;
+  min-width: 0;
   margin: 0;
   font-size: 1.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#langSel {
+  width: auto;
+  padding: .45rem .6rem;
+  font-size: .85rem;
+  cursor: pointer;
 }
 
 /* ===== Componentes ===== */
@@ -621,7 +632,13 @@ button:active:not(:disabled) { transform: scale(.96); }
 @media (max-width: 800px) {
   body { display: block; }
   main { padding: 0 1rem 6rem; }
-  header h2 { font-size: 1.3rem; }
+  header h2 { font-size: 1.15rem; }
+  #langSel {
+    padding: .4rem .3rem .4rem .5rem;
+    font-size: .8rem;
+  }
+  #installBtn span { display: none; }
+  #installBtn { padding: .55rem; }
 
   #nav {
     position: fixed;

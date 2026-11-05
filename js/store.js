@@ -49,7 +49,7 @@ export function importData(text) {
   try {
     data = JSON.parse(text);
   } catch {}
-  if (!COLS.some(c => Array.isArray(data?.[c]))) throw new Error('Arquivo de backup inválido.');
+  if (!COLS.some(c => Array.isArray(data?.[c]))) throw new Error('backup-invalid');
   load(data);
   persist();
 }
