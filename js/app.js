@@ -34,6 +34,19 @@ const greet = () => {
   return t(h < 12 ? 'greet.morning' : h < 18 ? 'greet.afternoon' : 'greet.evening');
 };
 
+// Tempo relativo no idioma atual; passada uma semana, mostra a data
+const ago = ts => {
+  const diff = (ts - Date.now()) / 1000;
+  const abs = Math.abs(diff);
+  const rtf = new Intl.RelativeTimeFormat(locale(), { numeric: 'auto', style: 'short' });
+  if (abs < 60) return rtf.format(0, 'second');
+  if (abs < 3600) return rtf.format(Math.round(diff / 60), 'minute');
+  if (abs < 86400) return rtf.format(Math.round(diff / 3600), 'hour');
+  if (abs < 7 * 86400) return rtf.format(Math.round(diff / 86400), 'day');
+  const sameYear = new Date(ts).getFullYear() === new Date().getFullYear();
+  return new Date(ts).toLocaleDateString(locale(), { day: 'numeric', month: 'short', ...(sameYear ? {} : { year: 'numeric' }) });
+};
+
 const byStart = (a, b) => a.start.localeCompare(b.start);
 const subj = id => state.subjects.find(s => s.id === id);
 const subjOpts = () => [['', t('form.none')], ...state.subjects.map(s => [s.id, s.name])];
@@ -45,7 +58,9 @@ const avg = s => {
 const initialView = new URLSearchParams(location.search).get('view');
 let current = VIEWS.includes(initialView) ? initialView : 'dashboard';
 let cursor = new Date();
-let noteId = null;
+let notesTab = 'all';
+let editingId = null;
+let draft = { text: '', subjectId: '' };
 let schedDay = null;
 
 /* ===== Interface compartilhada ===== */
@@ -169,20 +184,6 @@ const editSubject = item => form(item.id ? t('subject.edit') : t('subject.new'),
   },
   item.id && (() => del('subjects', item)));
 
-async function newNote() {
-  prune(null);
-  const n = { id: newId(), title: '', body: '', subjectId: '', updated: Date.now() };
-  await save('notes', n);
-  noteId = n.id;
-}
-
-// Descarta notas vazias (criadas e abandonadas)
-function prune(keep) {
-  state.notes
-    .filter(n => n.id !== keep && !n.title.trim() && !n.body.trim())
-    .forEach(n => remove('notes', n.id));
-}
-
 /* ===== Backup ===== */
 function exportBackup() {
   const a = document.createElement('a');
@@ -197,7 +198,7 @@ async function importBackup(file) {
   if (!file || !confirm(t('backup.confirm'))) return null;
   try {
     importData(await file.text());
-    noteId = null;
+    editingId = null;
     render();
     return 'done';
   } catch {
@@ -239,7 +240,7 @@ const views = {
       const k = b.dataset.new;
       if (k === 'event') editEvent({ date: todayISO(), type: 'Prova' });
       else if (k === 'subject') editSubject({});
-      else { await newNote(); go('notes'); }
+      else { go('notes'); $('#cText')?.focus(); }
     });
   },
 
@@ -324,37 +325,102 @@ const views = {
   },
 
   notes() {
-    const sel = state.notes.find(n => n.id === noteId);
-    const sorted = [...state.notes].sort((a, b) => (b.updated || 0) - (a.updated || 0));
+    const when = n => n.created || n.updated || 0;
+    const tagged = n => esc(n.body).replace(/(^|\s)(#[\p{L}\p{N}_]+)/gu, '$1<span class="tag">$2</span>');
+    const visible = state.notes.filter(n => (n.title || '').trim() || (n.body || '').trim());
+    const list = visible
+      .filter(n => notesTab === 'all' || n.pinned)
+      .sort((a, b) => (notesTab === 'all' ? Number(!!b.pinned) - Number(!!a.pinned) : 0) || when(b) - when(a));
 
-    const listHtml = sorted.map(n => `<div class="item${n.id === noteId ? ' on' : ''}" role="button" tabindex="0" data-id="${esc(n.id)}"><span>${esc(n.title || t('notes.untitled'))}</span></div>`).join('');
-    const editor = sel
-      ? `<button class="back" id="nBack">${ic('left')} ${t('notes.back')}</button>
-         <input id="nTitle" value="${esc(sel.title)}" placeholder="${t('notes.titlePh')}" aria-label="${t('notes.titlePh')}">
-         <label>${t('subject.label')}<select id="nSubj">${options(subjOpts(), sel.subjectId)}</select></label>
-         <textarea id="nBody" rows="14" placeholder="${t('notes.bodyPh')}" aria-label="${t('notes.body')}">${esc(sel.body)}</textarea>
-         <div class="row between"><span class="muted">${t('notes.autosave')}</span><button class="danger" id="nDel">${t('form.delete')}</button></div>`
-      : `<p class="muted">${t('notes.pick')}</p>`;
+    const avatar = `<div class="avatar">${ic('book')}</div>`;
+    const act = (name, icon, label, extra = '') => `<button type="button" data-act="${name}" aria-label="${label}" title="${label}"${extra}>${ic(icon)}</button>`;
 
-    view.innerHTML = `<div class="notes${sel ? ' editing' : ''}">
-      <div class="card list"><button class="primary" id="nNew">${ic('plus')} ${t('notes.new')}</button>${listHtml}</div>
-      <div class="card editor">${editor}</div></div>`;
-
-    $('#nNew').onclick = async () => { await newNote(); render(); $('#nTitle')?.focus(); };
-    view.querySelectorAll('.list .item').forEach(i => i.onclick = () => { prune(i.dataset.id); noteId = i.dataset.id; render(); });
-
-    if (!sel) return;
-    $('#nBack').onclick = () => { prune(null); noteId = null; render(); };
-
-    // Salva a cada alteração, sem recriar a tela (mantém o foco)
-    const commit = () => {
-      Object.assign(sel, { title: $('#nTitle').value, body: $('#nBody').value, subjectId: $('#nSubj').value, updated: Date.now() });
-      save('notes', sel);
-      const label = view.querySelector(`.list .item[data-id="${sel.id}"] span`);
-      if (label) label.textContent = sel.title || t('notes.untitled');
+    const postHtml = n => {
+      if (n.id === editingId) {
+        return `<article class="post editing" data-id="${esc(n.id)}">${avatar}<div class="pbody">
+          ${n.title ? `<input id="eTitle" value="${esc(n.title)}" placeholder="${t('notes.titlePh')}" aria-label="${t('notes.titlePh')}">` : ''}
+          <textarea id="eText" rows="3" aria-label="${t('notes.body')}">${esc(n.body)}</textarea>
+          <div class="cbar"><select id="eSubj" aria-label="${t('subject.label')}">${options(subjOpts(), n.subjectId)}</select>
+            <div class="row"><button type="button" id="eCancel">${t('form.cancel')}</button><button type="button" class="primary" id="eSave">${t('form.save')}</button></div></div></div></article>`;
+      }
+      const s = subj(n.subjectId);
+      return `<article class="post" data-id="${esc(n.id)}">${avatar}<div class="pbody">
+        <div class="phead"><b>${t('notes.me')}</b><span class="muted">· <time title="${esc(new Date(when(n)).toLocaleString(locale()))}">${ago(when(n))}</time></span>${n.pinned ? `<span class="pinned">${ic('pin')} ${t('notes.pinned')}</span>` : ''}</div>
+        ${n.title ? `<div class="ptitle">${esc(n.title)}</div>` : ''}
+        ${n.body ? `<p class="ptext">${tagged(n)}</p>` : ''}
+        ${s ? `<span class="subj" style="--dot:${safeColor(s.color)}">${esc(s.name)}</span>` : ''}
+        <div class="pacts">${act('edit', 'edit', t('notes.edit'))}${act('pin', 'pin', n.pinned ? t('notes.unpin') : t('notes.pin'), ` aria-pressed="${!!n.pinned}"`)}${act('del', 'trash', t('form.delete'))}</div></div></article>`;
     };
-    ['#nTitle', '#nBody', '#nSubj'].forEach(s => $(s).addEventListener('input', commit));
-    $('#nDel').onclick = async () => { noteId = null; await del('notes', sel); };
+
+    const tabs = [['all', 'notes.tabAll'], ['pinned', 'notes.tabPinned']]
+      .map(([k, key]) => `<button type="button" role="tab" aria-selected="${notesTab === k}" data-ntab="${k}" class="${notesTab === k ? 'on' : ''}">${t(key)}</button>`).join('');
+
+    view.innerHTML = `<div class="timeline">
+      <div class="ntabs" role="tablist">${tabs}</div>
+      <div class="composer">${avatar}<div class="cbody">
+        <textarea id="cText" rows="2" placeholder="${t('notes.compose')}" aria-label="${t('notes.compose')}">${esc(draft.text)}</textarea>
+        <div class="cbar"><select id="cSubj" aria-label="${t('subject.label')}">${options(subjOpts(), draft.subjectId)}</select>
+          <button type="button" class="primary" id="cPost" disabled>${t('notes.post')}</button></div></div></div>
+      <div class="feed">${list.map(postHtml).join('') || `<p class="muted empty-feed">${t(notesTab === 'all' ? 'notes.emptyAll' : 'notes.emptyPinned')}</p>`}</div></div>`;
+
+    const grow = el => { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; };
+    const cText = $('#cText');
+    const cPost = $('#cPost');
+
+    // Rascunho fica guardado (sobrevive a trocar de idioma ou de aba)
+    const sync = () => {
+      draft.text = cText.value;
+      cPost.disabled = !cText.value.trim();
+      grow(cText);
+    };
+    cText.addEventListener('input', sync);
+    sync();
+    $('#cSubj').onchange = e => { draft.subjectId = e.target.value; };
+
+    const publish = async () => {
+      const body = cText.value.trim();
+      if (!body) return;
+      const now = Date.now();
+      await save('notes', { id: newId(), title: '', body, subjectId: $('#cSubj').value, created: now, updated: now, pinned: false });
+      draft.text = '';
+      render();
+      toast(t('form.saved'));
+    };
+    cPost.onclick = publish;
+    cText.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); publish(); }
+    });
+
+    view.querySelectorAll('[data-ntab]').forEach(b => b.onclick = () => { notesTab = b.dataset.ntab; render(); });
+
+    view.querySelectorAll('.post:not(.editing) [data-act]').forEach(b => b.onclick = async () => {
+      const n = state.notes.find(x => x.id === b.closest('.post').dataset.id);
+      if (!n) return;
+      if (b.dataset.act === 'edit') { editingId = n.id; render(); $('#eText')?.focus(); }
+      else if (b.dataset.act === 'pin') { await save('notes', { ...n, pinned: !n.pinned }); render(); }
+      else del('notes', n);
+    });
+
+    const editing = state.notes.find(n => n.id === editingId);
+    if (editing && $('#eText')) {
+      const eText = $('#eText');
+      const finish = () => { editingId = null; render(); };
+      const saveEdit = async () => {
+        const title = $('#eTitle')?.value ?? editing.title;
+        const body = eText.value.trim();
+        if (!body && !title.trim()) return;
+        await save('notes', { ...editing, title, body, subjectId: $('#eSubj').value, updated: Date.now() });
+        finish();
+      };
+      grow(eText);
+      eText.addEventListener('input', () => grow(eText));
+      eText.addEventListener('keydown', e => {
+        if (e.key === 'Escape') { e.preventDefault(); finish(); }
+        else if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+      });
+      $('#eCancel').onclick = finish;
+      $('#eSave').onclick = saveEdit;
+    }
   },
 
   subjects() {
@@ -397,7 +463,7 @@ const go = v => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     return;
   }
-  if (v !== 'notes') prune(null);
+  editingId = null;
   current = v;
   render();
   enter();
