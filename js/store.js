@@ -19,12 +19,23 @@ const load = data => COLS.forEach(c => {
   state[c] = Array.isArray(list) ? list.filter(x => x && typeof x.id === 'string') : [];
 });
 
-export async function init() {
-  let data;
+const read = () => {
   try {
-    data = JSON.parse(localStorage.getItem(KEY));
-  } catch {}
-  load(data);
+    return JSON.parse(localStorage.getItem(KEY));
+  } catch {
+    return null;
+  }
+};
+
+// Outra aba gravou: recarrega e avisa a interface
+window.addEventListener('storage', e => {
+  if (e.key !== KEY && e.key !== null) return;
+  load(read());
+  window.dispatchEvent(new Event('studyflow:sync'));
+});
+
+export async function init() {
+  load(read());
   // Pede ao navegador para não apagar os dados sob pressão de espaço
   navigator.storage?.persist?.().catch(() => {});
 }

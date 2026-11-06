@@ -53,7 +53,11 @@ index.html
 manifest.webmanifest   # dados do app instalável
 sw.js                  # service worker (offline)
 css/style.css
-js/app.js              # telas, formulários, navegação e instalação
+js/app.js              # navegação, eventos e inicialização
+js/views/              # uma tela por arquivo (dashboard, schedule, calendar, notes, subjects)
+js/ui.js, editors.js   # diálogo, avisos e formulários
+js/settings.js, theme.js, pwa.js # configurações, tema e instalação
+js/util.js             # formatadores (com cache) e utilitários
 js/store.js            # estado, persistência e backup
 js/i18n.js             # idiomas (pt, en, es) e detecção automática
 js/icons.js            # ícones SVG inline
