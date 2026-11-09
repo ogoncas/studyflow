@@ -6,11 +6,11 @@ Organizador de estudos que roda no navegador e pode ser instalado como app no PC
 
 - **Início:** aulas do dia (com marcação de "Agora"), próximas entregas e atalhos para criar itens.
 - **Horário:** grade semanal de segunda a sábado, com sugestão de horário após a última aula.
-- **Calendário:** provas, trabalhos e eventos por data.
+- **Calendário:** provas, trabalhos e eventos por data, com a lista do mês logo abaixo.
 - **Notas:** linha do tempo em estilo rede social: publique notas rápidas (Ctrl+Enter), use #hashtags, ligue a uma matéria, fixe, edite e exclua com desfazer.
 - **Matérias:** professor, sala, cor e média calculada a partir das notas.
 - **3 idiomas:** português, inglês e espanhol, escolhidos automaticamente pelo idioma do navegador ou manualmente nas configurações. Qualquer outro idioma, ou texto que falte, cai em inglês.
-- **Configurações (⚙):** tema claro, escuro ou do sistema, idioma, backup (exporta e importa todos os dados em um arquivo JSON) e informações do desenvolvedor.
+- **Configurações (⚙):** tema claro, escuro ou do sistema, idioma, backup (exporta e importa todos os dados em um arquivo JSON), instalar o app, apoio ao projeto (doação) e informações do desenvolvedor. A chave Pix fica em `DEV.pix`, em `js/settings.js`.
 - **Desfazer** ao excluir, tema claro/escuro e layout responsivo (navegação inferior e gesto de deslizar no celular).
 
 ## Como usar

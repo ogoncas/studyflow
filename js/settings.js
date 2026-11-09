@@ -6,7 +6,7 @@ import { dlg, dlgForm, shut } from './ui.js';
 import { getThemePref, setThemePref } from './theme.js';
 import { canInstall, install, isInstalled } from './pwa.js';
 
-const DEV = { name: 'Mateus Gonçalves', repo: 'ogoncas/studyflow' };
+const DEV = { name: 'Mateus Gonçalves', repo: 'ogoncas/studyflow', pix: '4ace4c2d-1cf9-44dd-a72f-747861e5148f' };
 const THEMES = [['light', 'sun', 'theme.light'], ['dark', 'moon', 'theme.dark'], ['auto', 'monitor', 'theme.system']];
 
 function exportBackup() {
@@ -29,6 +29,16 @@ async function importBackup(file) {
   }
 }
 
+// Copia a chave Pix; se o navegador negar, seleciona o texto para copiar à mão
+async function copyPix() {
+  try {
+    await navigator.clipboard.writeText(DEV.pix);
+    $('#pixMsg').textContent = t('donate.copied');
+  } catch {
+    getSelection().selectAllChildren($('#pixKey'));
+  }
+}
+
 function renderSettings() {
   const themePref = getThemePref();
   dlg.setAttribute('aria-label', t('settings'));
@@ -42,6 +52,9 @@ function renderSettings() {
       <input type="file" id="bkFile" accept="application/json,.json" hidden><p class="msg" id="setMsg" role="status"></p></section>
     <section><h4>${t('install.title')}</h4><p class="muted">${t(isInstalled() ? 'install.done' : canInstall() ? 'install.text' : 'install.unavailable')}</p>
       ${isInstalled() ? '' : `<div class="row start"><button type="button" id="setInstall"${canInstall() ? '' : ' disabled'}>${ic('download')} ${t('install')}</button></div>`}</section>
+    <section><h4>${t('donate.title')}</h4><p class="muted">${t('donate.text')}</p>
+      <code class="pix" id="pixKey">${DEV.pix}</code>
+      <div class="row start"><button type="button" class="primary" id="pixCopy">${ic('heart')} ${t('donate.btn')}</button></div><p class="msg good" id="pixMsg" role="status"></p></section>
     <section><h4>${t('about.title')}</h4><dl class="about">
       <div><dt>${t('about.developer')}</dt><dd>${DEV.name}</dd></div>
       <div><dt>GitHub</dt><dd><a href="https://github.com/${DEV.repo}" target="_blank" rel="noopener noreferrer">${DEV.repo}</a></dd></div>
@@ -58,6 +71,7 @@ function renderSettings() {
       dlgForm.querySelectorAll('[data-theme-opt]').forEach(x => x.setAttribute('aria-checked', x === b));
     } else if (b.id === 'bkExport') exportBackup();
     else if (b.id === 'bkImport') $('#bkFile').click();
+    else if (b.id === 'pixCopy') copyPix();
     else if (b.id === 'setInstall') install().then(ok => ok && shut());
     else if (b.id === 'setClose') shut();
   };
