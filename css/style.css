@@ -879,8 +879,7 @@ button:active:not(:disabled) { transform: scale(.96); }
   body { display: block; }
   main { padding: 0 1rem 6rem; }
   header h2 { font-size: 1.3rem; }
-  #installBtn span { display: none; }
-  #installBtn { padding: .55rem; }
+  #installBtn { display: none; }
 
   #nav {
     position: fixed;

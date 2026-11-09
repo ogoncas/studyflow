@@ -5,7 +5,7 @@ import { $, app, VIEWS } from './util.js';
 import { dlg, toast } from './ui.js';
 import { initTheme } from './theme.js';
 import { openSettings, refreshSettings } from './settings.js';
-import { initPwa } from './pwa.js';
+import { initPwa, onInstallChange } from './pwa.js';
 import dashboard from './views/dashboard.js';
 import schedule from './views/schedule.js';
 import calendar from './views/calendar.js';
@@ -113,6 +113,7 @@ document.addEventListener('visibilitychange', tick);
 /* ===== Inicialização ===== */
 initTheme();
 initPwa();
+onInstallChange(refreshSettings);
 setLang(getPref());
 hydrate();
 applyStatic();
