@@ -1,9 +1,9 @@
 // Service worker: rede primeiro, cache como reserva (funciona offline)
-const CACHE = 'studyflow-v9';
+const CACHE = 'studyflow-v10';
 const ASSETS = [
   './', 'index.html', 'manifest.webmanifest',
   'css/style.css',
-  'js/app.js', 'js/util.js', 'js/ui.js', 'js/editors.js', 'js/store.js', 'js/i18n.js', 'js/icons.js', 'js/theme.js', 'js/settings.js', 'js/pwa.js', 'js/views/dashboard.js', 'js/views/schedule.js', 'js/views/calendar.js', 'js/views/notes.js', 'js/views/subjects.js',
+  'js/boot.js', 'js/app.js', 'js/util.js', 'js/ui.js', 'js/editors.js', 'js/store.js', 'js/i18n.js', 'js/icons.js', 'js/theme.js', 'js/settings.js', 'js/pwa.js', 'js/views/dashboard.js', 'js/views/schedule.js', 'js/views/calendar.js', 'js/views/notes.js', 'js/views/subjects.js',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/maskable-512.png', 'icons/apple-touch-icon.png'
 ];
 
@@ -29,7 +29,8 @@ self.addEventListener('fetch', e => {
   e.respondWith(Promise.race([
     fetch(request, { cache: 'no-cache' })
       .then(res => {
-        if (res.ok) {
+        // Só guarda respostas normais do próprio site (nada de erro, redirecionamento ou opaca)
+        if (res.ok && res.type === 'basic') {
           const copy = res.clone();
           caches.open(CACHE).then(c => c.put(request.mode === 'navigate' ? 'index.html' : request, copy));
         }

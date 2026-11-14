@@ -17,7 +17,7 @@ export const editClass = item => form(item.id ? t('class.edit') : t('class.new')
   item.id && (() => del('schedule', item)));
 
 export const editEvent = item => form(item.id ? t('event.edit') : t('event.new'), [
-  { n: 'title', l: t('event.title'), r: 1 },
+  { n: 'title', l: t('event.title'), m: 120, r: 1 },
   { n: 'date', l: t('event.date'), t: 'date', r: 1 },
   { n: 'type', l: t('event.type'), t: 'select', o: TYPES.map(x => [x, typeLabel(x)]) }
 ], item,
@@ -28,11 +28,11 @@ export const editEvent = item => form(item.id ? t('event.edit') : t('event.new')
   item.id && (() => del('events', item)));
 
 export const editSubject = item => form(item.id ? t('subject.edit') : t('subject.new'), [
-  { n: 'name', l: t('subject.name'), r: 1 },
-  { n: 'teacher', l: t('subject.teacher') },
-  { n: 'room', l: t('subject.room') },
+  { n: 'name', l: t('subject.name'), m: 80, r: 1 },
+  { n: 'teacher', l: t('subject.teacher'), m: 80 },
+  { n: 'room', l: t('subject.room'), m: 20 },
   { n: 'color', l: t('subject.color'), t: 'color', d: '#4f6df5' },
-  { n: 'grades', l: t('subject.grades'), p: '8,5 7 9' }
+  { n: 'grades', l: t('subject.grades'), m: 200, p: '8,5 7 9' }
 ], item,
   d => {
     if (!d.name.trim()) throw new Error(t('subject.errName'));

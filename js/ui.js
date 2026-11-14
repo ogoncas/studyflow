@@ -55,7 +55,7 @@ export function form(title, fields, item, onOk, onDel) {
   dlgForm.innerHTML = `<h3>${title}</h3>` + fields.map(f => `<label>${f.l}` +
     (f.t === 'select'
       ? `<select name="${f.n}">${options(f.o)}</select>`
-      : `<input name="${f.n}" type="${f.t || 'text'}" autocomplete="off"${f.p ? ` placeholder="${f.p}"` : ''}${f.r ? ' required' : ''}>`) +
+      : `<input name="${f.n}" type="${f.t || 'text'}" autocomplete="off"${f.p ? ` placeholder="${f.p}"` : ''}${f.m ? ` maxlength="${f.m}"` : ''}${f.r ? ' required' : ''}>`) +
     `</label>`).join('') +
     `<p class="err" role="alert"></p><div class="row">` +
     (onDel ? `<button type="button" class="danger" id="dlgD" data-do="del">${t('form.delete')}</button>` : '') +

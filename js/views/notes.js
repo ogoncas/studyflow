@@ -27,8 +27,8 @@ const grow = el => {
 function postHtml(n) {
   if (n.id === editingId) {
     return `<article class="post editing" data-id="${esc(n.id)}">${avatar}<div class="pbody">
-      ${n.title ? `<input id="eTitle" value="${esc(n.title)}" placeholder="${t('notes.titlePh')}" aria-label="${t('notes.titlePh')}">` : ''}
-      <textarea id="eText" rows="3" aria-label="${t('notes.body')}">${esc(n.body)}</textarea>
+      ${n.title ? `<input id="eTitle" maxlength="120" value="${esc(n.title)}" placeholder="${t('notes.titlePh')}" aria-label="${t('notes.titlePh')}">` : ''}
+      <textarea id="eText" rows="3" maxlength="5000" aria-label="${t('notes.body')}">${esc(n.body)}</textarea>
       <div class="cbar"><select id="eSubj" aria-label="${t('subject.label')}">${options(subjOpts(), n.subjectId)}</select>
         <div class="row"><button type="button" id="eCancel">${t('form.cancel')}</button><button type="button" class="primary" id="eSave">${t('form.save')}</button></div></div></div></article>`;
   }
@@ -104,7 +104,7 @@ export default {
     view.innerHTML = `<div class="timeline">
       <div class="ntabs" role="tablist">${tabs}</div>
       <div class="composer">${avatar}<div class="cbody">
-        <textarea id="cText" rows="2" placeholder="${t('notes.compose')}" aria-label="${t('notes.compose')}">${esc(draft.text)}</textarea>
+        <textarea id="cText" rows="2" maxlength="5000" placeholder="${t('notes.compose')}" aria-label="${t('notes.compose')}">${esc(draft.text)}</textarea>
         <div class="cbar"><select id="cSubj" aria-label="${t('subject.label')}">${options(subjOpts(), draft.subjectId)}</select>
           <button type="button" class="primary" id="cPost" disabled>${t('notes.post')}</button></div></div></div>
       <div class="feed">${list.slice(0, shown).map(postHtml).join('') || `<p class="muted empty-feed">${t(tab === 'all' ? 'notes.emptyAll' : 'notes.emptyPinned')}</p>`}${shown < list.length ? '<div id="feedMore" aria-hidden="true"></div>' : ''}</div></div>`;

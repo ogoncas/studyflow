@@ -1,5 +1,5 @@
 import { ic } from './icons.js';
-import { exportData, importData } from './store.js';
+import { exportData, importData, MAX_BACKUP_BYTES } from './store.js';
 import { t, setLang, getPref, LANGS } from './i18n.js';
 import { $, app, todayISO } from './util.js';
 import { dlg, dlgForm, shut } from './ui.js';
@@ -19,7 +19,9 @@ function exportBackup() {
 
 // Retorna 'done', 'invalid' ou null (cancelado)
 async function importBackup(file) {
-  if (!file || !confirm(t('backup.confirm'))) return null;
+  if (!file) return null;
+  if (file.size > MAX_BACKUP_BYTES) return 'invalid';
+  if (!confirm(t('backup.confirm'))) return null;
   try {
     importData(await file.text());
     app.reset();

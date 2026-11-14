@@ -50,6 +50,8 @@ Em **Settings → Pages**, escolha a branch `main` e a pasta `/ (root)`. O GitHu
 
 ```
 index.html
+_headers               # cabeçalhos de segurança (Netlify/Cloudflare)
+SECURITY.md            # medidas e limites de segurança
 manifest.webmanifest   # dados do app instalável
 sw.js                  # service worker (offline)
 css/style.css
@@ -57,6 +59,7 @@ js/app.js              # navegação, eventos e inicialização
 js/views/              # uma tela por arquivo (dashboard, schedule, calendar, notes, subjects)
 js/ui.js, editors.js   # diálogo, avisos e formulários
 js/settings.js, theme.js, pwa.js # configurações (inclui instalar app), tema e PWA
+js/boot.js             # aplica o tema antes da 1ª pintura (fora do HTML por causa da CSP)
 js/util.js             # formatadores (com cache) e utilitários
 js/store.js            # estado, persistência e backup
 js/i18n.js             # idiomas (pt, en, es) e detecção automática
@@ -64,6 +67,10 @@ js/icons.js            # ícones SVG inline
 icons/                 # ícones do app (PNG, maskable e SVG)
 screenshots/           # imagens do diálogo de instalação
 ```
+
+## Segurança
+
+Tudo roda no navegador, sem servidor nem requisições a terceiros. O app usa CSP restritiva, valida os dados importados e armazenados e escapa todo texto exibido. Detalhes e limites em [SECURITY.md](SECURITY.md). Em hospedagens que aceitam cabeçalhos HTTP, o arquivo `_headers` adiciona proteções extras.
 
 ## Licença
 

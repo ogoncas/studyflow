@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#f5f6fa">
 <meta name="color-scheme" content="light dark">
@@ -30,13 +32,7 @@
 <link rel="modulepreload" href="js/views/calendar.js">
 <link rel="modulepreload" href="js/views/notes.js">
 <link rel="modulepreload" href="js/views/subjects.js">
-<script>
-  // Aplica o tema antes da primeira pintura (evita piscar)
-  try {
-    document.documentElement.dataset.theme = localStorage.getItem('studyflow-theme') ||
-      (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
-  } catch (e) {}
-</script>
+<script src="js/boot.js"></script>
 </head>
 <body>
 <aside id="nav">
