@@ -70,7 +70,7 @@ screenshots/           # imagens do diálogo de instalação
 
 ## Segurança
 
-Tudo roda no navegador, sem servidor nem requisições a terceiros. O app usa CSP restritiva, valida os dados importados e armazenados e escapa todo texto exibido. Detalhes e limites em [SECURITY.md](SECURITY.md). Em hospedagens que aceitam cabeçalhos HTTP, o arquivo `_headers` adiciona proteções extras.
+Tudo roda no navegador, sem servidor nem requisições a terceiros. O app usa CSP restritiva, valida os dados importados e armazenados e escapa todo texto exibido. Detalhes e limites em [SECURITY.md](SECURITY.md). Em hospedagens que aceitam cabeçalhos HTTP, o arquivo `_headers` adiciona proteções extras (HSTS, anti-iframe e outras). No GitHub Pages, ative "Enforce HTTPS" em Settings → Pages.
 
 ## Licença
 

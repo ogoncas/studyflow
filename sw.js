@@ -1,5 +1,5 @@
 // Service worker: rede primeiro, cache como reserva (funciona offline)
-const CACHE = 'studyflow-v10';
+const CACHE = 'studyflow-v11';
 const ASSETS = [
   './', 'index.html', 'manifest.webmanifest',
   'css/style.css',
