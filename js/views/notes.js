@@ -4,6 +4,7 @@ import { t } from '../i18n.js';
 import { $, app, esc, safeColor, options, byId, ago, fullStamp } from '../util.js';
 import { toast, del } from '../ui.js';
 import { subjOpts } from '../editors.js';
+import { getPrefs, avatarHtml } from '../prefs.js';
 
 const PAGE = 30; // posts desenhados por vez: o feed cresce conforme a rolagem
 
@@ -16,7 +17,6 @@ let subjects = new Map();
 let io = null;
 
 const when = n => n.created || n.updated || 0;
-const avatar = `<div class="avatar">${ic('book')}</div>`;
 const act = (name, icon, label, extra = '') => `<button type="button" data-act="${name}" aria-label="${label}" title="${label}"${extra}>${ic(icon)}</button>`;
 const tagged = n => esc(n.body).replace(/(^|\s)(#[\p{L}\p{N}_]+)/gu, '$1<span class="tag">$2</span>');
 const grow = el => {
@@ -26,7 +26,7 @@ const grow = el => {
 
 function postHtml(n) {
   if (n.id === editingId) {
-    return `<article class="post editing" data-id="${esc(n.id)}">${avatar}<div class="pbody">
+    return `<article class="post editing" data-id="${esc(n.id)}">${avatarHtml()}<div class="pbody">
       ${n.title ? `<input id="eTitle" maxlength="120" value="${esc(n.title)}" placeholder="${t('notes.titlePh')}" aria-label="${t('notes.titlePh')}">` : ''}
       <textarea id="eText" rows="3" maxlength="5000" aria-label="${t('notes.body')}">${esc(n.body)}</textarea>
       <div class="cbar"><select id="eSubj" aria-label="${t('subject.label')}">${options(subjOpts(), n.subjectId)}</select>
@@ -34,8 +34,8 @@ function postHtml(n) {
   }
   const s = subjects.get(n.subjectId);
   const ts = when(n);
-  return `<article class="post" data-id="${esc(n.id)}">${avatar}<div class="pbody">
-    <div class="phead"><b>${t('notes.me')}</b><span class="muted">· <time data-ts="${ts}" title="${esc(fullStamp(ts))}">${ago(ts)}</time></span>${n.pinned ? `<span class="pinned">${ic('pin')} ${t('notes.pinned')}</span>` : ''}</div>
+  return `<article class="post" data-id="${esc(n.id)}">${avatarHtml()}<div class="pbody">
+    <div class="phead"><b>${esc(getPrefs().name) || t('notes.me')}</b><span class="muted">· <time data-ts="${ts}" title="${esc(fullStamp(ts))}">${ago(ts)}</time></span>${n.pinned ? `<span class="pinned">${ic('pin')} ${t('notes.pinned')}</span>` : ''}</div>
     ${n.title ? `<div class="ptitle">${esc(n.title)}</div>` : ''}
     ${n.body ? `<p class="ptext">${tagged(n)}</p>` : ''}
     ${s ? `<span class="subj" style="--dot:${safeColor(s.color)}">${esc(s.name)}</span>` : ''}
@@ -103,7 +103,7 @@ export default {
 
     view.innerHTML = `<div class="timeline">
       <div class="ntabs" role="tablist">${tabs}</div>
-      <div class="composer">${avatar}<div class="cbody">
+      <div class="composer">${avatarHtml()}<div class="cbody">
         <textarea id="cText" rows="2" maxlength="5000" placeholder="${t('notes.compose')}" aria-label="${t('notes.compose')}">${esc(draft.text)}</textarea>
         <div class="cbar"><select id="cSubj" aria-label="${t('subject.label')}">${options(subjOpts(), draft.subjectId)}</select>
           <button type="button" class="primary" id="cPost" disabled>${t('notes.post')}</button></div></div></div>

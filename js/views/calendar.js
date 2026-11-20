@@ -4,6 +4,7 @@ import { t } from '../i18n.js';
 import { app, esc, typeOf, typeLabel, todayISO, dayShort, monthLabel, dayMonthLong, fmtDate, TYPE_COLORS } from '../util.js';
 import { anim } from '../ui.js';
 import { editEvent } from '../editors.js';
+import { getPrefs } from '../prefs.js';
 
 let cursor = new Date();
 
@@ -11,7 +12,8 @@ export default {
   draw(view) {
     const y = cursor.getFullYear();
     const m = cursor.getMonth();
-    const first = new Date(y, m, 1).getDay();
+    const ws = getPrefs().weekStart;
+    const first = (new Date(y, m, 1).getDay() - ws + 7) % 7;
     const n = new Date(y, m + 1, 0).getDate();
     const today = todayISO();
     const pad = String(m + 1).padStart(2, '0');
@@ -36,7 +38,7 @@ export default {
 
     view.innerHTML = `<div class="bar"><button data-cal="-1" id="calPrev" aria-label="${t('cal.prev')}">${ic('left')}</button><b>${monthLabel(cursor)}</b>
       <div><button data-cal="0" id="calToday">${t('cal.today')}</button><button data-cal="1" id="calNext" aria-label="${t('cal.next')}">${ic('right')}</button></div></div>
-      <div class="cal">${[0, 1, 2, 3, 4, 5, 6].map(d => `<b class="muted">${dayShort(d)}</b>`).join('')}${cells}</div>${agenda ? `<div class="card agenda"><h3>${t('cal.events')}</h3>${agenda}</div>` : ''}`;
+      <div class="cal">${[0, 1, 2, 3, 4, 5, 6].map(d => `<b class="muted">${dayShort((d + ws) % 7)}</b>`).join('')}${cells}</div>${agenda ? `<div class="card agenda"><h3>${t('cal.events')}</h3>${agenda}</div>` : ''}`;
   },
 
   click(e) {

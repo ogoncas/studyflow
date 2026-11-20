@@ -10,7 +10,10 @@ Organizador de estudos que roda no navegador e pode ser instalado como app no PC
 - **Notas:** linha do tempo em estilo rede social: publique notas rápidas (Ctrl+Enter), use #hashtags, ligue a uma matéria, fixe, edite e exclua com desfazer.
 - **Matérias:** professor, sala, cor e média calculada a partir das notas.
 - **3 idiomas:** português, inglês e espanhol, escolhidos automaticamente pelo idioma do navegador ou manualmente nas configurações. Qualquer outro idioma, ou texto que falte, cai em inglês.
-- **Configurações (⚙):** tema claro, escuro ou do sistema, idioma, backup (exporta e importa todos os dados em um arquivo JSON), instalar o app, apoio ao projeto (doação) e informações do desenvolvedor. A chave Pix fica em `DEV.pix`, em `js/settings.js`.
+- **Perfil:** nome, objetivo/curso e foto (recortada e reduzida no próprio aparelho). Aparece na barra lateral, no cabeçalho do celular, na saudação e nas notas.
+- **Personalização:** tema, cor de destaque (8 opções + cor livre), fonte, tamanho do texto, cantos e animações.
+- **Layout (desktop e celular):** tela inicial, menu com rótulos ou só ícones, menu à esquerda ou direita, largura do conteúdo, densidade e primeiro dia da semana.
+- **Configurações (⚙):** abas Perfil, Aparência, Layout, Geral (idioma, backup, instalar o app) e Sobre (doação e desenvolvedor). O backup inclui o perfil e as preferências. A chave Pix fica em `DEV.pix`, em `js/settings.js`.
 - **Desfazer** ao excluir, tema claro/escuro e layout responsivo (navegação inferior e gesto de deslizar no celular).
 
 ## Como usar
@@ -58,7 +61,9 @@ css/style.css
 js/app.js              # navegação, eventos e inicialização
 js/views/              # uma tela por arquivo (dashboard, schedule, calendar, notes, subjects)
 js/ui.js, editors.js   # diálogo, avisos e formulários
-js/settings.js, theme.js, pwa.js # configurações (inclui instalar app), tema e PWA
+js/settings.js         # configurações em abas (perfil, aparência, layout, geral, sobre)
+js/prefs.js            # perfil e preferências (validação, foto, avatar)
+js/theme.js, pwa.js    # tema claro/escuro e instalação do PWA
 js/boot.js             # aplica o tema antes da 1ª pintura (fora do HTML por causa da CSP)
 js/util.js             # formatadores (com cache) e utilitários
 js/store.js            # estado, persistência e backup

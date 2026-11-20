@@ -3,6 +3,7 @@ import { state } from '../store.js';
 import { t } from '../i18n.js';
 import { $, app, esc, safeColor, typeOf, typeLabel, TYPE_COLORS, byId, byStart, isDate, todayISO, daysUntil, fmtDate, inDays, greet, dayName } from '../util.js';
 import { editEvent, editSubject } from '../editors.js';
+import { getPrefs } from '../prefs.js';
 
 export default {
   draw(view) {
@@ -25,7 +26,7 @@ export default {
       return `<div class="item" role="button" tabindex="0" data-go="calendar" style="border-color:${TYPE_COLORS[type]}"><b>${fmtDate(e.date)}</b><span>${esc(e.title)}<span class="muted sub">${typeLabel(type)} · ${inDays(daysUntil(e.date))}</span></span></div>`;
     }).join('');
 
-    view.innerHTML = `<div class="hero"><div><h3>${greet()}!</h3><p>${t('quote.' + new Date().getDate() % 5)}</p></div>
+    view.innerHTML = `<div class="hero"><div><h3>${greet()}${getPrefs().name ? ', ' + esc(getPrefs().name) : ''}!</h3><p>${t('quote.' + new Date().getDate() % 5)}</p></div>
       <div class="stats"><div><b>${classes.length}</b><span>${t('dash.classesToday')}</span></div><div><b>${week}</b><span>${t('dash.in7')}</span></div><div><b>${state.subjects.length}</b><span>${t('dash.subjects')}</span></div></div></div>
     <div class="grid">
       <div class="card"><h3>${t('dash.today', { day: dayName(day) })}</h3>${classHtml || `<p class="muted">${t('dash.noClasses')}</p>`}</div>

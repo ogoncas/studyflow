@@ -7,6 +7,7 @@ O StudyFlow roda inteiramente no navegador: não há servidor, conta, rastreamen
 - **CSP restritiva** (`index.html` e `_headers`): só scripts e estilos do próprio site, sem `eval` nem scripts inline, sem plugins e sem conexões externas.
 - **Saída segura:** todo texto dos dados passa por escape antes de ir para o HTML; cores e tipos são validados.
 - **Dados validados na entrada:** o que vem do armazenamento, de um backup importado ou dos formulários é normalizado (campos conhecidos, tipos, tamanhos, datas, horas, cores, ids únicos e limite de itens). Backups acima de 5 MB são recusados.
+- **Perfil e preferências:** `js/prefs.js` aceita só valores de uma lista (cores `#rrggbb`, opções fixas, nome até 40 e objetivo até 60 caracteres). A foto só entra como JPEG/PNG/WebP, é redesenhada em 256×256 num canvas e salva como JPEG de até ~110 KB; SVG e arquivos que não são imagem são recusados. O mesmo filtro vale para backups importados.
 - **Service worker:** só trata requisições GET do próprio site e só guarda respostas normais.
 - **Links externos** usam `rel="noopener noreferrer"`; `Referrer-Policy: no-referrer`.
 

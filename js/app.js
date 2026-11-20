@@ -1,9 +1,10 @@
 import { ic, hydrate } from './icons.js';
 import { init } from './store.js';
 import { t, setLang, getPref, applyStatic } from './i18n.js';
-import { $, app, VIEWS } from './util.js';
+import { $, app, esc, VIEWS } from './util.js';
 import { dlg, toast } from './ui.js';
 import { initTheme } from './theme.js';
+import { initPrefs, onPrefs, getPrefs, avatarHtml } from './prefs.js';
 import { openSettings, refreshSettings } from './settings.js';
 import { initPwa, onInstallChange } from './pwa.js';
 import dashboard from './views/dashboard.js';
@@ -17,7 +18,7 @@ const view = $('#view');
 const navButtons = document.querySelectorAll('#nav nav button');
 
 const initialView = new URLSearchParams(location.search).get('view');
-let current = VIEWS.includes(initialView) ? initialView : 'dashboard';
+let current = VIEWS.includes(initialView) ? initialView : getPrefs().home;
 
 function render() {
   $('#title').textContent = t('title.' + current);
@@ -58,8 +59,12 @@ function refreshLang() {
   refreshSettings();
 }
 
+// Perfil na barra lateral (desktop) e avatar no cabeçalho (celular)
 const renderUser = () => {
-  $('#userBox').innerHTML = `<p class="muted">${ic('drive')} ${t('offlineNote')}</p>`;
+  const { name, bio } = getPrefs();
+  $('#userBox').innerHTML = `<button type="button" class="me" id="meBtn" aria-label="${t('profile.edit')}" title="${t('profile.edit')}">${avatarHtml()}<span class="me-text"><b>${esc(name) || t('profile.setup')}</b>${bio ? `<small>${esc(bio)}</small>` : ''}</span></button>
+    <p class="muted">${ic('drive')} ${t('offlineNote')}</p>`;
+  $('#meHdr').innerHTML = avatarHtml();
 };
 
 Object.assign(app, {
@@ -81,7 +86,9 @@ for (const type of ['touchstart', 'touchend']) {
 }
 
 navButtons.forEach(b => b.addEventListener('click', () => go(b.dataset.view)));
-$('#setBtn').addEventListener('click', openSettings);
+$('#setBtn').addEventListener('click', () => openSettings());
+$('#userBox').addEventListener('click', e => e.target.closest('#meBtn') && openSettings('profile'));
+$('#meHdr').addEventListener('click', () => openSettings('profile'));
 
 // Itens clicáveis também respondem a Enter e Espaço
 document.addEventListener('keydown', e => {
@@ -112,6 +119,11 @@ document.addEventListener('visibilitychange', tick);
 
 /* ===== Inicialização ===== */
 initTheme();
+initPrefs();
+onPrefs(() => {
+  renderUser();
+  render();
+});
 initPwa();
 onInstallChange(refreshSettings);
 setLang(getPref());

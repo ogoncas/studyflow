@@ -89,4 +89,5 @@ export function importData(text) {
   if (!COLS.some(c => Array.isArray(data?.[c]))) throw new Error('backup-invalid');
   load(data);
   persist();
+  return data;
 }
