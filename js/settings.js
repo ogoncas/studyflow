@@ -50,7 +50,7 @@ async function copyPix() {
 }
 
 /* ===== Peças de interface ===== */
-const section = (title, body) => `<section><h4>${title}</h4>${body}</section>`;
+const section = (title, body, cls = '') => `<section${cls ? ` class="${cls}"` : ''}><h4>${title}</h4>${body}</section>`;
 
 // Grupo de botões de rádio ligado a uma preferência
 const seg = (key, items) => {
@@ -91,7 +91,7 @@ const panels = {
     const home = `<select data-pref="home" aria-label="${t('lay.home')}">${VIEWS.map(v => `<option value="${v}"${v === p.home ? ' selected' : ''}>${t('nav.' + (v === 'dashboard' ? 'home' : v))}</option>`).join('')}</select>`;
     return section(t('lay.home'), home) +
       section(t('lay.nav'), choice('nav', 'lay.nav.')) +
-      section(t('lay.side'), seg('side', [['left', t('lay.left')], ['right', t('lay.right')]])) +
+      section(t('lay.side'), seg('side', [['left', t('lay.left')], ['right', t('lay.right')]]), 'desk-only') +
       section(t('lay.width'), choice('width', 'lay.width.')) +
       section(t('lay.density'), choice('density', 'lay.density.')) +
       section(t('lay.week'), seg('weekStart', [[0, dayName(0)], [1, dayName(1)]]));

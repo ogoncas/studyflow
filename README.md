@@ -12,8 +12,8 @@ Organizador de estudos que roda no navegador e pode ser instalado como app no PC
 - **3 idiomas:** português, inglês e espanhol, escolhidos automaticamente pelo idioma do navegador ou manualmente nas configurações. Qualquer outro idioma, ou texto que falte, cai em inglês.
 - **Perfil:** nome, objetivo/curso e foto (recortada e reduzida no próprio aparelho). Aparece na barra lateral, no cabeçalho do celular, na saudação e nas notas.
 - **Personalização:** tema, cor de destaque (8 opções + cor livre), fonte, tamanho do texto, cantos e animações.
-- **Layout (desktop e celular):** tela inicial, menu com rótulos ou só ícones, menu à esquerda ou direita, largura do conteúdo, densidade e primeiro dia da semana.
-- **Configurações (⚙):** abas Perfil, Aparência, Layout, Geral (idioma, backup, instalar o app) e Sobre (doação e desenvolvedor). O backup inclui o perfil e as preferências. A chave Pix fica em `DEV.pix`, em `js/settings.js`.
+- **Layout (desktop e celular):** tela inicial, menu com rótulos ou só ícones, menu à esquerda ou direita (só no desktop), largura do conteúdo, densidade e primeiro dia da semana.
+- **Configurações (toque na sua foto de perfil):** abas Perfil, Aparência, Layout, Geral (idioma, backup, instalar o app) e Sobre (doação e desenvolvedor). O backup inclui o perfil e as preferências. A chave Pix fica em `DEV.pix`, em `js/settings.js`.
 - **Desfazer** ao excluir, tema claro/escuro e layout responsivo (navegação inferior e gesto de deslizar no celular).
 
 ## Como usar

@@ -62,9 +62,9 @@ function refreshLang() {
 // Perfil na barra lateral (desktop) e avatar no cabeçalho (celular)
 const renderUser = () => {
   const { name, bio } = getPrefs();
-  $('#userBox').innerHTML = `<button type="button" class="me" id="meBtn" aria-label="${t('profile.edit')}" title="${t('profile.edit')}">${avatarHtml()}<span class="me-text"><b>${esc(name) || t('profile.setup')}</b>${bio ? `<small>${esc(bio)}</small>` : ''}</span></button>
+  $('#userBox').innerHTML = `<button type="button" class="me" id="meBtn" aria-label="${t('settings')}" title="${t('settings')}">${avatarHtml()}<span class="me-text"><b>${esc(name) || t('profile.setup')}</b>${bio ? `<small>${esc(bio)}</small>` : ''}</span></button>
     <p class="muted">${ic('drive')} ${t('offlineNote')}</p>`;
-  $('#meHdr').innerHTML = avatarHtml();
+  $('#meHdr').innerHTML = `${avatarHtml()}<span class="gear">${ic('settings')}</span>`;
 };
 
 Object.assign(app, {
@@ -86,7 +86,6 @@ for (const type of ['touchstart', 'touchend']) {
 }
 
 navButtons.forEach(b => b.addEventListener('click', () => go(b.dataset.view)));
-$('#setBtn').addEventListener('click', () => openSettings());
 $('#userBox').addEventListener('click', e => e.target.closest('#meBtn') && openSettings('profile'));
 $('#meHdr').addEventListener('click', () => openSettings('profile'));
 
